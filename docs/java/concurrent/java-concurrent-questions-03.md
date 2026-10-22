@@ -1,13 +1,13 @@
 ---
-title: Java并发常见面试题总结（下）
-description: Java并发高级面试题：详解ThreadLocal原理与内存泄漏、线程池参数配置与工作原理、Future/CompletableFuture异步编程、并发容器与工具类使用。
+title: Java Concurrency 常见面试题总结（下）
+description: Java Concurrency 高级面试题：详解ThreadLocal原理与 Memory Leak、Thread Pool Parameter 配置与工作原理、Future/CompletableFuture Asynchronous 编程、Concurrent Container 与 Utility Class 使用。
 category: Java
 tag:
   - Java并发
 head:
   - - meta
     - name: keywords
-      content: ThreadLocal,线程池,Executor框架,Future,CompletableFuture,并发工具类,并发容器,并发面试题
+      content: ThreadLocal,Thread Pool,Executor框架,Future,CompletableFuture,Concurrency Utility Class,Concurrent Container,Concurrency 面试题
 ---
 
 <!-- @include: @article-header.snippet.md -->
@@ -16,13 +16,13 @@ head:
 
 ### ThreadLocal 有什么用？
 
-通常情况下，我们创建的变量可以被任何一个线程访问和修改。这在多线程环境中可能导致数据竞争和线程安全问题。那么，**如果想让每个线程都有自己的专属本地变量，该如何实现呢？**
+通常情况下，我们创建的 Variable 可以被任何一个 Thread 访问和修改。这在 Multithreading 环境中可能导致数据竞争和 Thread-safe 问题。那么，**如果想让每个 Thread 都有自己的专属本地 Variable，该如何实现呢？**
 
-JDK 中提供的 `ThreadLocal` 类正是为了解决这个问题。**`ThreadLocal` 类允许每个线程绑定自己的值**，可以将其形象地比喻为一个“存放数据的盒子”。每个线程都有自己独立的盒子，用于存储私有数据，确保不同线程之间的数据互不干扰。
+JDK 中提供的 `ThreadLocal` Class 正是为了解决这个问题。**`ThreadLocal` Class 允许每个 Thread 绑定自己的值**，可以将其形象地比喻为一个“存放数据的盒子”。每个 Thread 都有自己独立的盒子，用于存储私有数据，确保不同 Thread 之间的数据互不干扰。
 
-当你创建一个 `ThreadLocal` 变量时，每个访问该变量的线程都会拥有一个独立的副本。这也是 `ThreadLocal` 名称的由来。线程可以通过 `get()` 方法获取自己线程的本地副本，或通过 `set()` 方法修改该副本的值，从而避免了线程安全问题。
+当你创建一个 `ThreadLocal` Variable 时，每个访问该 Variable 的 Thread 都会拥有一个独立的副本。这也是 `ThreadLocal` 名称的由来。 Thread 可以通过 `get()` Method 获取自己 Thread 的本地副本，或通过 `set()` Method 修改该副本的值，从而避免了 Thread-safe 问题。
 
-举个简单的例子：假设有两个人去宝屋收集宝物。如果他们共用一个袋子，必然会产生争执；但如果每个人都有一个独立的袋子，就不会有这个问题。如果将这两个人比作线程，那么 `ThreadLocal` 就是用来避免这两个线程竞争同一个资源的方法。
+举个简单的例子：假设有两个人去宝屋收集宝物。如果他们共用一个袋子，必然会产生争执；但如果每个人都有一个独立的袋子，就不会有这个问题。如果将这两个人比作 Thread，那么 `ThreadLocal` 就是用来避免这两个 Thread 竞争同一个资源的方法。
 
 ```java
 public class ThreadLocalExample {
@@ -47,7 +47,7 @@ public class ThreadLocalExample {
 
 ### ⭐️ ThreadLocal 原理了解吗？
 
-从 `Thread` 类源代码入手。
+从 `Thread` Class 源代码入手。
 
 ```java
 public class Thread implements Runnable {
@@ -61,9 +61,9 @@ public class Thread implements Runnable {
 }
 ```
 
-从上面 `Thread` 类 源代码可以看出 `Thread` 类中有一个 `threadLocals` 和 一个 `inheritableThreadLocals` 变量，它们都是 `ThreadLocalMap` 类型的变量，我们可以把 `ThreadLocalMap` 理解为 `ThreadLocal` 类实现的定制化的 `HashMap`。默认情况下这两个变量都是 null，只有当前线程调用 `ThreadLocal` 类的 `set` 或 `get` 方法时才创建它们，实际上调用这两个方法的时候，我们调用的是 `ThreadLocalMap` 类对应的 `get()`、`set()` 方法。
+从上面 `Thread` Class 源代码可以看出 `Thread` Class 中有一个 `threadLocals` 和 一个 `inheritableThreadLocals` Variable，它们都是 `ThreadLocalMap` Type 的 Variable，我们可以把 `ThreadLocalMap` 理解为 `ThreadLocal` Class 实现的定制化的 `HashMap`。默认情况下这两个 Variable 都是 null，只有 Current Thread 调用 `ThreadLocal` Class 的 `set` 或 `get` Method 时才创建它们，实际上调用这两个 Method 的时候，我们调用的是 `ThreadLocalMap` Class 对应的 `get()`、`set()` Method。
 
-`ThreadLocal` 类的 `set()` 方法
+`ThreadLocal` Class 的 `set()` Method
 
 ```java
 public void set(T value) {
@@ -82,9 +82,9 @@ ThreadLocalMap getMap(Thread t) {
 }
 ```
 
-通过上面这些内容，我们足以通过猜测得出结论：**最终的变量是放在了当前线程的 `ThreadLocalMap` 中，并不是存在 `ThreadLocal` 上，`ThreadLocal` 可以理解为只是 `ThreadLocalMap` 的封装，传递了变量值。** `ThrealLocal` 类中可以通过 `Thread.currentThread()` 获取到当前线程对象后，直接通过 `getMap(Thread t)` 可以访问到该线程的 `ThreadLocalMap` 对象。
+通过上面这些内容，我们足以通过猜测得出结论：**最终的 Variable 是放在了 Current Thread 的 `ThreadLocalMap` 中，并不是存在 `ThreadLocal` 上，`ThreadLocal` 可以理解为只是 `ThreadLocalMap` 的 Encapsulation，传递了 Variable 值。** `ThrealLocal` Class 中可以通过 `Thread.currentThread()` 获取到 Current Thread Object 后，直接通过 `getMap(Thread t)` 可以访问到该 Thread 的 `ThreadLocalMap` Object。
 
-**每个 `Thread` 中都具备一个 `ThreadLocalMap`，而 `ThreadLocalMap` 可以存储以 `ThreadLocal` 为 key，Object 对象为 value 的键值对。**
+**每个 `Thread` 中都具备一个 `ThreadLocalMap`，而 `ThreadLocalMap` 可以存储以 `ThreadLocal` 为 key，Object 为 value 的键值对。**
 
 ```java
 ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
@@ -92,23 +92,23 @@ ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
 }
 ```
 
-比如我们在同一个线程中声明了两个 `ThreadLocal` 对象的话， `Thread` 内部都是使用仅有的那个 `ThreadLocalMap` 存放数据的，`ThreadLocalMap` 的 key 就是 `ThreadLocal` 对象，value 就是 `ThreadLocal` 对象调用 `set` 方法设置的值。
+比如我们在同一个 Thread 中声明了两个 `ThreadLocal` Object 的话， `Thread` 内部都是使用仅有的那个 `ThreadLocalMap` 存放数据的，`ThreadLocalMap` 的 key 就是 `ThreadLocal` Object，value 就是 `ThreadLocal` Object 调用 `set` Method 设置的值。
 
-`ThreadLocal` 数据结构如下图所示：
+`ThreadLocal` Data Structure 如下图所示：
 
-![ThreadLocal 数据结构](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadlocal-data-structure.png)
+![ThreadLocal Data Structure](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadlocal-data-structure.png)
 
-`ThreadLocalMap` 是 `ThreadLocal` 的静态内部类。
+`ThreadLocalMap` 是 `ThreadLocal` 的 Static Nested Class。
 
-![ThreadLocal内部类](https://oss.javaguide.cn/github/javaguide/java/concurrent/thread-local-inner-class.png)
+![ThreadLocal Inner Class](https://oss.javaguide.cn/github/javaguide/java/concurrent/thread-local-inner-class.png)
 
 ### ⭐️ ThreadLocal 内存泄露问题是怎么导致的？
 
-`ThreadLocal` 内存泄漏的根本原因在于其内部实现机制。
+`ThreadLocal` Memory Leak 的根本原因在于其内部实现机制。
 
-通过上面的内容我们已经知道：每个线程维护一个名为 `ThreadLocalMap` 的 map。 当你使用 `ThreadLocal` 存储值时，实际上是将值存储在当前线程的 `ThreadLocalMap` 中，其中 `ThreadLocal` 实例本身作为 key，而你要存储的值作为 value。
+通过上面的内容我们已经知道：每个 Thread 维护一个名为 `ThreadLocalMap` 的 map。 当你使用 `ThreadLocal` 存储值时，实际上是将值存储在 Current Thread 的 `ThreadLocalMap` 中，其中 `ThreadLocal` Instance 本身作为 key，而你要存储的值作为 value。
 
-`ThreadLocal` 的 `set()` 方法源码如下：
+`ThreadLocal` 的 `set()` Method 源码如下：
 
 ```java
 public void set(T value) {
@@ -122,7 +122,7 @@ public void set(T value) {
 }
 ```
 
-`ThreadLocalMap` 的 `set()` 和 `createMap()` 方法中，并没有直接存储 `ThreadLocal` 对象本身，而是使用 `ThreadLocal` 的哈希值计算数组索引，最终存储于类型为 `static class Entry extends WeakReference<ThreadLocal<?>>` 的数组中。
+`ThreadLocalMap` 的 `set()` 和 `createMap()` Method 中，并没有直接存储 `ThreadLocal` Object 本身，而是使用 `ThreadLocal` 的哈希值计算 Array Index，最终存储于 Type 为 `static class Entry extends WeakReference<ThreadLocal<?>>` 的 Array 中。
 
 ```java
 int i = key.threadLocalHashCode & (len-1);
@@ -141,30 +141,30 @@ static class Entry extends WeakReference<ThreadLocal<?>> {
 }
 ```
 
-`ThreadLocalMap` 的 `key` 和 `value` 引用机制：
+`ThreadLocalMap` 的 `key` 和 `value` Reference 机制：
 
-- **key 是弱引用**：`ThreadLocalMap` 中的 key 是 `ThreadLocal` 的弱引用 (`WeakReference<ThreadLocal<?>>`)。 这意味着，如果 `ThreadLocal` 实例不再被任何强引用指向，垃圾回收器会在下次 GC 时回收该实例，导致 `ThreadLocalMap` 中对应的 key 变为 `null`。
-- **value 是强引用**：即使 `key` 被 GC 回收，`value` 仍然被 `ThreadLocalMap.Entry` 强引用存在，无法被 GC 回收。
+- **key 是 Weak Reference**：`ThreadLocalMap` 中的 key 是 `ThreadLocal` 的 Weak Reference (`WeakReference<ThreadLocal<?>>`)。 这意味着，如果 `ThreadLocal` Instance 不再被任何 Strong Reference 指向，Garbage Collector 会在下次 Garbage Collection (GC) 时回收该 Instance，导致 `ThreadLocalMap` 中对应的 key 变为 `null`。
+- **value 是 Strong Reference**：即使 `key` 被 GC 回收，`value` 仍然被 `ThreadLocalMap.Entry` Strong Reference 存在，无法被 GC 回收。
 
-当 `ThreadLocal` 实例失去强引用后，其对应的 value 仍然存在于 `ThreadLocalMap` 中，因为 `Entry` 对象强引用了它。如果线程持续存活（例如线程池中的线程），`ThreadLocalMap` 也会一直存在，导致 key 为 `null` 的 entry 无法被垃圾回收，即会造成内存泄漏。
+当 `ThreadLocal` Instance 失去 Strong Reference 后，其对应的 value 仍然存在于 `ThreadLocalMap` 中，因为 `Entry` Object Strong Reference 了它。如果 Thread 持续存活（例如 Thread Pool 中的 Thread），`ThreadLocalMap` 也会一直存在，导致 key 为 `null` 的 entry 无法被 GC，即会造成 Memory Leak。
 
-也就是说，内存泄漏的发生需要同时满足两个条件：
+也就是说，Memory Leak 的发生需要同时满足两个条件：
 
-1. `ThreadLocal` 实例不再被强引用；
-2. 线程持续存活，导致 `ThreadLocalMap` 长期存在。
+1. `ThreadLocal` Instance 不再被 Strong Reference；
+2. Thread 持续存活，导致 `ThreadLocalMap` 长期存在。
 
 虽然 `ThreadLocalMap` 在 `get()`, `set()` 和 `remove()` 操作时会尝试清理 key 为 null 的 entry，但这种清理机制是被动的，并不完全可靠。
 
-**如何避免内存泄漏的发生？**
+**如何避免 Memory Leak 的发生？**
 
-1. 在使用完 `ThreadLocal` 后，务必调用 `remove()` 方法。 这是最安全和最推荐的做法。 `remove()` 方法会从 `ThreadLocalMap` 中显式地移除对应的 entry，彻底解决内存泄漏的风险。 即使将 `ThreadLocal` 定义为 `static final`，也强烈建议在每次使用后调用 `remove()`。
-2. 在线程池等线程复用的场景下，使用 `try-finally` 块可以确保即使发生异常，`remove()` 方法也一定会被执行。
+1. 在使用完 `ThreadLocal` 后，务必调用 `remove()` Method。 这是最安全和最推荐的做法。 `remove()` Method 会从 `ThreadLocalMap` 中显式地移除对应的 entry，彻底解决 Memory Leak 的风险。 即使将 `ThreadLocal` 定义为 `static final`，也强烈建议在每次使用后调用 `remove()`。
+2. 在 Thread Pool 等 Thread Reuse 的场景下，使用 `try-finally` 块可以确保即使发生 Exception，`remove()` Method 也一定会被执行。
 
-#### 为什么 Entry 的 key 要设计为弱引用？
+#### 为什么 Entry 的 key 要设计为 Weak Reference？
 
-这是一个经典的面试追问。很多同学知道 `ThreadLocalMap` 的 key 是弱引用，但不清楚**为什么要这样设计**，以及如果换成强引用会怎样。
+这是一个经典的面试追问。很多同学知道 `ThreadLocalMap` 的 key 是 Weak Reference，但不清楚**为什么要这样设计**，以及如果换成 Strong Reference 会怎样。
 
-我们先来看完整的引用链路。当一个线程使用 `ThreadLocal` 时，涉及以下引用关系：
+我们先来看完整的 Reference Chain 路。当一个 Thread 使用 `ThreadLocal` 时，涉及以下 Reference 关系：
 
 ```
 强引用（栈/静态变量）──→ ThreadLocal 实例
@@ -174,38 +174,38 @@ Thread ──→ ThreadLocalMap ──→ Entry ─── key（WeakReference）
                               └─── value（强引用）──→ 实际存储的对象
 ```
 
-理解了这条引用链路，我们来对比两种设计方案：
+理解了这条 Reference Chain 路，我们来对比两种设计方案：
 
-**假设 key 使用强引用（实际没有采用）：**
+**假设 key 使用 Strong Reference（实际没有采用）：**
 
-当业务代码中的 `ThreadLocal` 引用被置为 `null`（例如方法执行结束、对象被回收），此时虽然业务代码已经不再需要这个 `ThreadLocal`，但由于 `ThreadLocalMap` 的 Entry 对 key 持有**强引用**，`ThreadLocal` 实例仍然无法被 GC 回收。只要线程不终止，这个 `ThreadLocal` 和它对应的 value 都会一直存在于内存中，造成 key 和 value **都无法回收**的内存泄漏。
+当业务代码中的 `ThreadLocal` Reference 被置为 `null`（例如 Method 执行结束、Object 被回收），此时虽然业务代码已经不再需要这个 `ThreadLocal`，但由于 `ThreadLocalMap` 的 Entry 对 key 持有**Strong Reference**，`ThreadLocal` Instance 仍然无法被 GC 回收。只要 Thread 不终止，这个 `ThreadLocal` 和它对应的 value 都会一直存在于内存中，造成 key 和 value **都无法回收**的 Memory Leak。
 
-**key 使用弱引用（实际采用的方案）：**
+**key 使用 Weak Reference（实际采用的方案）：**
 
-当业务代码中的 `ThreadLocal` 引用被置为 `null` 后，由于 Entry 的 key 是弱引用，`ThreadLocal` 实例在下次 GC 时会被回收，key 变为 `null`。此时虽然 value 仍然存在（强引用），但 `ThreadLocalMap` 在执行 `get()`、`set()`、`remove()` 等操作时，会主动探测并清理这些 key 为 `null` 的 "stale entry"（过期条目），从而释放 value 对象。
+当业务代码中的 `ThreadLocal` Reference 被置为 `null` 后，由于 Entry 的 key 是 Weak Reference，`ThreadLocal` Instance 在下次 GC 时会被回收，key 变为 `null`。此时虽然 value 仍然存在（Strong Reference），但 `ThreadLocalMap` 在执行 `get()`、`set()`、`remove()` 等操作时，会主动探测并清理这些 key 为 `null` 的 "stale entry"（过期条目），从而释放 value Object。
 
-也就是说，**弱引用的设计是一种“兜底”防御机制**——即便开发者忘记调用 `remove()`，JVM 的 GC 配合 `ThreadLocalMap` 的自清理逻辑，仍然有机会回收泄漏的数据。而如果使用强引用，一旦忘记 `remove()`，就完全没有任何补救机会了。
+也就是说，**Weak Reference 的设计是一种“兜底”防御机制**——即便开发者忘记调用 `remove()`，Java Virtual Machine (JVM) 的 GC 配合 `ThreadLocalMap` 的自清理逻辑，仍然有机会回收泄漏的数据。而如果使用 Strong Reference，一旦忘记 `remove()`，就完全没有任何补救机会了。
 
-> 需要注意的是，这种自清理机制是**被动触发**的（只在 `get`/`set`/`remove` 操作时顺便清理），并不能保证所有过期条目都被及时清理。因此，**弱引用只是降低了内存泄漏的风险，并没有彻底消除它**，手动调用 `remove()` 仍然是必须的。
+> 需要注意的是，这种自清理机制是**被动触发**的（只在 `get`/`set`/`remove` 操作时顺便清理），并不能保证所有过期条目都被及时清理。因此，**Weak Reference 只是降低了 Memory Leak 的风险，并没有彻底消除它**，手动调用 `remove()` 仍然是必须的。
 
-#### 线程池场景下的特殊风险
+#### Thread Pool 场景下的特殊风险
 
-上面提到内存泄漏的条件之一是“线程持续存活”。在使用 `new Thread()` 创建线程的场景下，线程执行完毕后会被销毁，其持有的 `ThreadLocalMap` 也会随之被 GC 回收，泄漏的影响相对有限。
+上面提到 Memory Leak 的条件之一是“Thread 持续存活”。在使用 `new Thread()` 创建 Thread 的场景下，Thread 执行完毕后会被销毁，其持有的 `ThreadLocalMap` 也会随之被 GC 回收，泄漏的影响相对有限。
 
-但在**线程池**场景下，问题会被严重放大。线程池中的核心线程默认不会被销毁，它们会被反复复用来执行不同的任务。这意味着：
+但在**Thread Pool**场景下，问题会被严重放大。 Thread Pool 中的 Core Thread 默认不会被销毁，它们会被反复复用来执行不同的 Task。这意味着：
 
-1. **内存泄漏可能累积**：如果任务不断创建新的临时 `ThreadLocal`，或使用多个 `ThreadLocal` 却没有清理，失去强引用的 key 被回收后，对应 value 仍可能残留在复用线程的 `ThreadLocalMap` 中。对同一个仍可达的 `ThreadLocal` 反复调用 `set()` 通常会替换旧 value，但最新 value 仍会一直保留到被覆盖、移除、清理或线程终止。
-2. **数据污染（脏数据）**：上一个任务设置的 `ThreadLocal` 值，如果没有被清理，下一个被分配到同一线程的任务就能读取到这个残留值。这可能导致严重的业务逻辑错误，比如用户 A 的请求读取到了用户 B 的身份信息。
+1. **Memory Leak 可能累积**：如果 Task 不断创建新的临时 `ThreadLocal`，或使用多个 `ThreadLocal` 却没有清理，失去 Strong Reference 的 key 被回收后，对应 value 仍可能残留在复用 Thread 的 `ThreadLocalMap` 中。对同一个仍 Reachable 的 `ThreadLocal` 反复调用 `set()` 通常会替换旧 value，但最新 value 仍会一直保留到被覆盖、移除、清理或 Thread 终止。
+2. **数据污染（脏数据）**：上一个 Task 设置的 `ThreadLocal` 值，如果没有被清理，下一个被分配到同一 Thread 的 Task 就能读取到这个残留值。这可能导致严重的业务逻辑错误，比如用户 A 的请求读取到了用户 B 的身份信息。
 
 **美团技术团队的真实事故案例：**
 
-美团技术团队在[《Java 线程池实现原理及其在美团业务中的实践》](https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html)一文中就记录了一次因 `ThreadLocal` 使用不当引发的线上事故：在一个依赖 `ThreadLocal` 传递用户上下文的 Web 应用中，由于使用了线程池处理请求，且没有在请求结束后清理 `ThreadLocal`，导致**后续请求复用了同一线程时，读取到了前一个请求遗留的用户信息**，造成了用户数据串号的严重问题。
+美团技术团队在[《Java Thread Pool 实现原理及其在美团业务中的实践》](https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html)一文中就记录了一次因 `ThreadLocal` 使用不当引发的线上事故：在一个依赖 `ThreadLocal` 传递用户 Context 的 Web 应用中，由于使用了 Thread Pool 处理请求，且没有在请求结束后清理 `ThreadLocal`，导致**后续请求复用了同一 Thread 时，读取到了前一个请求遗留的用户信息**，造成了用户数据串号的严重问题。
 
 #### 阿里巴巴 Java 开发手册的强制规约
 
-正因为线程池 + `ThreadLocal` 的组合如此容易踩坑，《阿里巴巴 Java 开发手册》在“并发处理”章节中对此做出了**强制**级别的要求：
+正因为 Thread Pool + `ThreadLocal` 的组合如此容易踩坑，《阿里巴巴 Java 开发手册》在“Concurrency 处理”章节中对此做出了**强制**级别的要求：
 
-> **【强制】** 必须回收自定义的 `ThreadLocal` 变量记录的当前线程的值，尤其在线程池场景下，线程经常会被复用，如果不清理自定义的 `ThreadLocal` 变量，可能会影响后续业务逻辑和造成内存泄露等问题。尽量在代理中使用 `try-finally` 块进行回收。
+> **【强制】** 必须回收自定义的 `ThreadLocal` Variable 记录的 Current Thread 的值，尤其在 Thread Pool 场景下，Thread 经常会被复用，如果不清理自定义的 `ThreadLocal` Variable，可能会影响后续业务逻辑和造成内存泄露等问题。尽量在代理中使用 `try-finally` 块进行回收。
 
 正确的使用模式如下：
 
@@ -230,40 +230,40 @@ public void processRequest(HttpServletRequest request) {
 
 这里有三个关键要点：
 
-1. **`ThreadLocal` 声明为 `static final`**：确保该字段对应的 `ThreadLocal` 实例不会在每次调用时重复创建，避免旧实例失去强引用后留下过期条目；这并不意味着整个应用只能有一个 `ThreadLocal` 实例。
-2. **`try-finally` 保证 `remove()` 一定被执行**：即使业务逻辑抛出异常，`finally` 块也能确保 `ThreadLocal` 被清理。
-3. **在使用完毕后立即清理，而不是依赖下次使用前覆盖**：对同一个 `ThreadLocal` 调用 `set()` 会替换旧 value，但在下一次任务到来前，旧值仍会被线程持有；如果代码改为使用其他 `ThreadLocal`，过期条目还可能长期残留。用完后在 `finally` 中调用 `remove()`，可以及时避免内存占用和数据污染。
+1. **`ThreadLocal` 声明为 `static final`**：确保该 Field 对应的 `ThreadLocal` Instance 不会在每次调用时重复创建，避免旧 Instance 失去 Strong Reference 后留下过期条目；这并不意味着整个应用只能有一个 `ThreadLocal` Instance。
+2. **`try-finally` 保证 `remove()` 一定被执行**：即使业务逻辑抛出 Exception，`finally` 块也能确保 `ThreadLocal` 被清理。
+3. **在使用完毕后立即清理，而不是依赖下次使用前覆盖**：对同一个 `ThreadLocal` 调用 `set()` 会替换旧 value，但在下一次 Task 到来前，旧值仍会被 Thread 持有；如果代码改为使用其他 `ThreadLocal`，过期条目还可能长期残留。用完后在 `finally` 中调用 `remove()`，可以及时避免内存占用和数据污染。
 
-### ⭐️ 如何跨线程传递 ThreadLocal 的值？
+### ⭐️ 如何跨 Thread 传递 ThreadLocal 的值？
 
-**为什么 ThreadLocal 在异步场景下会失效？**
+**为什么 ThreadLocal 在 Asynchronous 场景下会失效？**
 
-`ThreadLocal` 的值不在 `ThreadLocal` 对象中，而是存储在 `Thread` 里：
+`ThreadLocal` 的值不在 `ThreadLocal` Object 中，而是存储在 `Thread` 里：
 
 ```java
 Thread → ThreadLocalMap → Entry(ThreadLocal, value)
 ```
 
-`ThreadLocal` 数据结构如下图所示：
+`ThreadLocal` Data Structure 如下图所示：
 
-![ThreadLocal 数据结构](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadlocal-data-structure.png)
+![ThreadLocal Data Structure](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadlocal-data-structure.png)
 
-异步执行往往意味着任务会从当前线程切换到另一个线程（例如线程池中的工作线程）执行。由于不同线程各自维护独立的 `ThreadLocalMap`，默认情况下 `ThreadLocal` 的上下文无法在异步执行中自动传递。
+Asynchronous 执行往往意味着 Task 会从 Current Thread 切换到另一个 Thread（例如 Thread Pool 中的 Worker Thread）执行。由于不同 Thread 各自维护独立的 `ThreadLocalMap`，默认情况下 `ThreadLocal` 的 Context 无法在 Asynchronous 执行中自动传递。
 
-**如何跨线程传递 ThreadLocal 的值？**
+**如何跨 Thread 传递 ThreadLocal 的值？**
 
 为了解决这个问题，业界有两套主流的解决方案，一套是 JDK 原生的，另一套是阿里巴巴开源的。
 
-1. `InheritableThreadLocal`：JDK1.2 提供的一个类，继承自 `ThreadLocal`。使用 `InheritableThreadLocal` 时，会在创建子线程时，令子线程继承父线程中的 `ThreadLocal` 值，但是无法支持线程池场景下的 `ThreadLocal` 值传递。
-2. `TransmittableThreadLocal`： `TransmittableThreadLocal`（简称 TTL） 是阿里巴巴开源的工具类，继承并加强了 `InheritableThreadLocal` 类，可以在线程池的场景下支持 `ThreadLocal` 值传递。项目地址：<https://github.com/alibaba/transmittable-thread-local>。
+1. `InheritableThreadLocal`：JDK1.2 提供的一个 Class，Inheritance 自 `ThreadLocal`。使用 `InheritableThreadLocal` 时，会在创建 Child Thread 时，令 Child Thread Inheritance Parent Thread 中的 `ThreadLocal` 值，但是无法支持 Thread Pool 场景下的 `ThreadLocal` 值传递。
+2. `TransmittableThreadLocal`： `TransmittableThreadLocal`（简称 TTL） 是阿里巴巴开源的 Utility Class，Inheritance 并加强了 `InheritableThreadLocal` Class，可以在 Thread Pool 的场景下支持 `ThreadLocal` 值传递。项目 Address：<https://github.com/alibaba/transmittable-thread-local>。
 
 #### InheritableThreadLocal 原理
 
-`InheritableThreadLocal` 实现了创建异步线程时，继承父线程 `ThreadLocal` 值的功能。该类是 JDK 团队提供的，通过改造 JDK 源码包中的 `Thread` 类来实现创建线程时，`ThreadLocal` 值的传递。
+`InheritableThreadLocal` 实现了创建 Asynchronous Thread 时，Inheritance Parent Thread `ThreadLocal` 值的功能。该 Class 是 JDK 团队提供的，通过改造 JDK 源码 Package 中的 `Thread` Class 来实现创建 Thread 时，`ThreadLocal` 值的传递。
 
 **`InheritableThreadLocal` 的值存储在哪里？**
 
-在 `Thread` 类中添加了一个新的 `ThreadLocalMap`，命名为 `inheritableThreadLocals`，该变量用于存储需要跨线程传递的 `ThreadLocal` 值。如下：
+在 `Thread` Class 中添加了一个新的 `ThreadLocalMap`，命名为 `inheritableThreadLocals`，该 Variable 用于存储需要跨 Thread 传递的 `ThreadLocal` 值。如下：
 
 ```JAVA
 class Thread implements Runnable {
@@ -274,7 +274,7 @@ class Thread implements Runnable {
 
 **如何完成 `ThreadLocal` 值的传递？**
 
-通过改造 `Thread` 类的构造方法来实现，在创建 `Thread` 线程时，拿到父线程的 `inheritableThreadLocals` 变量赋值给子线程即可。相关代码如下：
+通过改造 `Thread` Class 的 Constructor 来实现，在创建 `Thread` Thread 时，拿到 Parent Thread 的 `inheritableThreadLocals` Variable 赋值给 Child Thread 即可。相关代码如下：
 
 ```JAVA
 // Thread 的构造方法会调用 init() 方法
@@ -290,21 +290,21 @@ private void init(/* ... */) {
 
 **`InheritableThreadLocal` 的方案有什么问题？**
 
-这个方案的缺陷在于它的**一次性**，也就是它只在线程创建时发生一次复制。然而，现在的开发中，我们会大量使用线程池，但线程池里的线程是被复用的。
+这个方案的缺陷在于它的**一次性**，也就是它只在 Thread 创建时发生一次复制。然而，现在的开发中，我们会大量使用 Thread Pool，但 Thread Pool 里的 Thread 是被复用的。
 
-想象一下，任务 A 在线程 1 中执行，把它的 `ThreadLocal` 值传给了线程池里的子线程 2。任务 A 结束后，线程 1 去休息了。接着，任务 B 来了，它在线程 3 中执行，线程池又复用了刚才那个子线程 2 来执行任务 B 的一部分。此时，子线程 2 的 `ThreadLocal` 里还残留着任务 A 传给它的脏数据，而任务 B（在线程 3 里）的上下文却完全没有传递过来。这就导致了数据污染和上下文丢失。
+想象一下，Task A 在 Thread 1 中执行，把它的 `ThreadLocal` 值传给了 Thread Pool 里的 Child Thread 2。 Task A 结束后，Thread 1 去休息了。接着，Task B 来了，它在 Thread 3 中执行，Thread Pool 又复用了刚才那个 Child Thread 2 来执行 Task B 的一部分。此时，Child Thread 2 的 `ThreadLocal` 里还残留着 Task A 传给它的脏数据，而 Task B（在 Thread 3 里）的 Context 却完全没有传递过来。这就导致了数据污染和 Context 丢失。
 
 #### TransmittableThreadLocal 原理
 
-JDK 默认没有支持线程池场景下 `ThreadLocal` 值传递的功能，因此阿里巴巴开源了一套工具 `TransmittableThreadLocal` 来实现该功能。
+JDK 默认没有支持 Thread Pool 场景下 `ThreadLocal` 值传递的功能，因此阿里巴巴开源了一套工具 `TransmittableThreadLocal` 来实现该功能。
 
-由于阿里巴巴无法改动 JDK 源码，TTL 巧妙地利用了**装饰器模式**对任务（`Runnable`/`Callable`）或线程池（`Executor`）进行增强，将上下文的传递时机从“线程创建时”延迟到了“任务提交与执行时”。
+由于阿里巴巴无法改动 JDK 源码，TTL 巧妙地利用了**装饰器模式**对 Task（`Runnable`/`Callable`）或 Thread Pool（`Executor`）进行增强，将 Context 的传递时机从“Thread 创建时”延迟到了“Task 提交与执行时”。
 
 TTL 的核心逻辑可以概括为三个阶段（CRR）：
 
-- **Capture（捕获）**：在提交任务（如调用 `execute`）的一瞬间，`TtlRunnable` 会调用 `TransmittableThreadLocal.Transmitter.capture()`。它通过内部维护的 `holder` 集合，抓取当前父线程中所有活跃的 TTL 变量并存入快照。
-- **Replay（回放）**：在线程池的工作线程执行 `run()` 方法前，调用 `replay()`。它将快照中的值 `set` 到当前工作线程中，并备份该线程原有的旧值。
-- **Restore（恢复）**：任务执行结束后，调用 `restore()`。它根据备份将工作线程恢复到执行前的状态，防止上下文污染或内存泄漏。
+- **Capture（捕获）**：在提交 Task（如调用 `execute`）的一瞬间，`TtlRunnable` 会调用 `TransmittableThreadLocal.Transmitter.capture()`。它通过内部维护的 `holder` Collection，抓取当前 Parent Thread 中所有活跃的 TTL Variable 并存入 Snapshot。
+- **Replay（回放）**：在 Thread Pool 的 Worker Thread 执行 `run()` Method 前，调用 `replay()`。它将 Snapshot 中的值 `set` 到当前 Worker Thread 中，并备份该 Thread 原有的旧值。
+- **Restore（恢复）**：Task 执行结束后，调用 `restore()`。它根据备份将 Worker Thread 恢复到执行前的状态，防止 Context 污染或 Memory Leak。
 
 这张图是 TTL 官方提供的 CRR 整个过程的时序图：
 
@@ -335,15 +335,15 @@ sequenceDiagram
 
 ```
 
-也就是说，TTL 的本质是在任务提交时 Capture 上下文，在任务执行前 Replay 上下文，在任务结束后 Restore 线程状态，从而安全地支持线程池中的 `ThreadLocal` 传递。
+也就是说，TTL 的本质是在 Task 提交时 Capture Context，在 Task 执行前 Replay Context，在 Task 结束后 Restore Thread State，从而安全地支持 Thread Pool 中的 `ThreadLocal` 传递。
 
 TTL 提供了两种主要的接入方式，可根据侵入性要求和改造成本进行选择。
 
 **1. 显式包装（手动接入）**
 
-使用 `TtlRunnable.get(Runnable)` 或 `TtlCallable.get(Callable)` 对任务进行包装，使用 `TtlExecutors.getTtlExecutor(Executor)`、`getTtlExecutorService(...)` 对线程池进行包装。这种接入方式清晰可控，但需要业务代码配合，存在一定侵入性。
+使用 `TtlRunnable.get(Runnable)` 或 `TtlCallable.get(Callable)` 对 Task 进行包装，使用 `TtlExecutors.getTtlExecutor(Executor)`、`getTtlExecutorService(...)` 对 Thread Pool 进行包装。这种接入方式清晰可控，但需要业务代码配合，存在一定侵入性。
 
-下面这段代码展示了 TTL 通过 CRR，在支持线程池复用和拒绝策略的前提下，安全地传递并隔离 `ThreadLocal` 上下文。
+下面这段代码展示了 TTL 通过 CRR，在支持 Thread Pool 复用和 Rejection Policy 的前提下，安全地传递并隔离 `ThreadLocal` Context。
 
 ```java
 public class TtlContextHolder {
@@ -425,15 +425,15 @@ public class TtlContextHolder {
 
 **2. 无侵入接入（Java Agent）**
 
-通过 Java Agent 在类加载阶段对线程池相关类进行 字节码增强，自动织入 TTL 的上下文传递逻辑，实现业务代码零改造的上下文透传。这种方式业务代码无需感知 TTL 的存在，但实现复杂度相对较高。
+通过 Java Agent 在 Class Loading 对 Thread Pool 相关 Class 进行 Bytecode 增强，自动织入 TTL 的 Context 传递逻辑，实现业务代码零改造的 Context 透传。这种方式业务代码无需感知 TTL 的存在，但实现复杂度相对较高。
 
 TTL Agent 默认修饰了以下 JDK 执行器组件：
 
-1. **标准线程池**：`java.util.concurrent.ThreadPoolExecutor` 和 `java.util.concurrent.ScheduledThreadPoolExecutor`。
-2. **ForkJoin 体系**：`java.util.concurrent.ForkJoinTask`（从而透明支持了 `CompletableFuture` 和 Java 8 并行流 `Stream`）。
+1. **标准 Thread Pool**：`java.util.concurrent.ThreadPoolExecutor` 和 `java.util.concurrent.ScheduledThreadPoolExecutor`。
+2. **ForkJoin 体系**：`java.util.concurrent.ForkJoinTask`（从而透明支持了 `CompletableFuture` 和 Java 8 Parallelism 流 `Stream`）。
 3. **遗留组件**：`java.util.TimerTask`（自 v2.7.0 起支持，v2.11.2 起默认开启）。
 
-在 Java 启动参数中加入 `-javaagent` 配置：
+在 Java 启动 Parameter 中加入 `-javaagent` 配置：
 
 ```bash
 # 基础配置
@@ -445,75 +445,75 @@ java -javaagent:path/to/transmittable-thread-local-2.x.y.jar \
 #### 应用场景
 
 1. **压测流量标记**： 在压测场景中，使用 `ThreadLocal` 存储压测标记，用于区分压测流量和真实流量。如果标记丢失，可能导致压测流量被错误地当成线上流量处理。
-2. **上下文传递**：在分布式系统中，传递链路追踪信息（如 Trace ID）或用户上下文信息。
+2. **Context 传递**：在分布式系统中，传递链路追踪信息（如 Trace ID）或用户 Context 信息。
 
 #### 总结
 
-`ThreadLocal` 的值默认是无法跨线程传递的，因为它的值是存在**每个 `Thread` 对象自己**的 `ThreadLocalMap` 里的，父子线程是两个不同的对象。
+`ThreadLocal` 的值默认是无法跨 Thread 传递的，因为它的值是存在**每个 `Thread` Object 自己**的 `ThreadLocalMap` 里的，父 Child Thread 是两个不同的 Object。
 
 为了解决这个问题，主要有两种方案：
 
-1. **JDK 的 InheritableThreadLocal**：它会在**创建子线程**的时候，把父线程的值**复制**一份给子线程。但它的问题是，在**线程池**场景下会失效。因为线程池会**复用**线程，这会导致线程拿到的可能是上一个任务传下来的**脏数据**。
-2. **阿里的 TransmittableThreadLocal (TTL)**：这是我们项目里用的方案，它专门解决线程池的问题。它的原理是，在**提交任务**到线程池时，它会把父线程的 `ThreadLocal` 值**捕获**下来，和任务**绑定**在一起。等线程池里的某个线程要执行这个任务时，它再把捕获的值**设置**到这个线程上，任务执行完再**清理**掉。
+1. **JDK 的 InheritableThreadLocal**：它会在**创建 Child Thread**的时候，把 Parent Thread 的值**复制**一份给 Child Thread。但它的问题是，在**Thread Pool**场景下会失效。因为 Thread Pool 会**复用**Thread，这会导致 Thread 拿到的可能是上一个 Task 传下来的**脏数据**。
+2. **阿里的 TransmittableThreadLocal (TTL)**：这是我们项目里用的方案，它专门解决 Thread Pool 的问题。它的原理是，在**提交 Task**到 Thread Pool 时，它会把 Parent Thread 的 `ThreadLocal` 值**捕获**下来，和 Task**绑定**在一起。等 Thread Pool 里的某个 Thread 要执行这个 Task 时，它再把捕获的值**设置**到这个 Thread 上，Task 执行完再**清理**掉。
 
-简单说，**InheritableThreadLocal 是跟线程绑定的，只在创建时有效；而 TTL 是跟任务绑定的，完美支持线程池。**
+简单说，**InheritableThreadLocal 是跟 Thread 绑定的，只在创建时有效；而 TTL 是跟 Task 绑定的，完美支持 Thread Pool。**
 
-## 线程池
+## Thread Pool
 
-### 什么是线程池？
+### 什么是 Thread Pool？
 
-顾名思义，线程池就是管理一系列线程的资源池。当有任务要处理时，直接从线程池中获取线程来处理，处理完之后线程并不会立即被销毁，而是等待下一个任务。
+顾名思义，Thread Pool 就是管理一系列 Thread 的资源池。当有 Task 要处理时，直接从 Thread Pool 中获取 Thread 来处理，处理完之后 Thread 并不会立即被销毁，而是等待下一个 Task。
 
-### ⭐️ 为什么要用线程池？
+### ⭐️ 为什么要用 Thread Pool？
 
-池化技术想必大家已经屡见不鲜了，线程池、数据库连接池、HTTP 连接池等等都是对这个思想的应用。池化技术的思想主要是为了减少每次获取资源的消耗，提高对资源的利用率。
+池化技术想必大家已经屡见不鲜了，Thread Pool、Database Connection Pool、HTTP Connection Pool 等等都是对这个思想的应用。池化技术的思想主要是为了减少每次获取资源的消耗，提高对资源的利用率。
 
-线程池提供了一种限制和管理资源（包括执行一个任务）的方式。 每个线程池还维护一些基本统计信息，例如已完成任务的数量。使用线程池主要带来以下几个好处：
+Thread Pool 提供了一种限制和管理资源（包括执行一个 Task）的方式。 每个 Thread Pool 还维护一些基本统计信息，例如已完成 Task 的数量。使用 Thread Pool 主要带来以下几个好处：
 
-1. **降低资源消耗**：线程池里的线程是可以重复利用的。一旦线程完成了某个任务，它不会立即销毁，而是回到池子里等待下一个任务。这就避免了频繁创建和销毁线程带来的开销。
-2. **提高响应速度**：因为线程池里通常会维护一定数量的核心线程（或者说“常驻工人”），任务来了之后，可以直接交给这些已经存在的、空闲的线程去执行，省去了创建线程的时间，任务能够更快地得到处理。
-3. **提高线程的可管理性**：线程池允许我们统一管理池中的线程。我们可以配置线程池的大小（核心线程数、最大线程数）、任务队列的类型和大小、拒绝策略等。这样就能控制并发线程的总量，防止资源耗尽，保证系统的稳定性。同时，线程池通常也提供了监控接口，方便我们了解线程池的运行状态（比如有多少活跃线程、多少任务在排队等），便于调优。
+1. **降低资源消耗**：Thread Pool 里的 Thread 是可以重复利用的。一旦 Thread 完成了某个 Task，它不会立即销毁，而是回到池子里等待下一个 Task。这就避免了频繁创建和销毁 Thread 带来的 Overhead。
+2. **提高响应速度**：因为 Thread Pool 里通常会维护一定数量的 Core Thread（或者说“常驻工人”），Task 来了之后，可以直接交给这些已经存在的、空闲的 Thread 去执行，省去了创建 Thread 的时间，Task 能够更快地得到处理。
+3. **提高 Thread 的可管理性**：Thread Pool 允许我们统一管理池中的 Thread。我们可以配置 Thread Pool 的大小（Core Pool Size、Maximum Pool Size）、Task Queue 的 Type 和大小、Rejection Policy 等。这样就能控制 Concurrency Thread 的总量，防止资源耗尽，保证系统的稳定性。同时，Thread Pool 通常也提供了 Monitoring Interface，方便我们了解 Thread Pool 的运行状态（比如有多少 Active Thread、多少 Task 在排队等），便于调优。
 
-### 如何创建线程池？
+### 如何创建 Thread Pool？
 
-在 Java 中，创建线程池主要有两种方式：
+在 Java 中，创建 Thread Pool 主要有两种方式：
 
-**方式一：通过 `ThreadPoolExecutor` 构造函数直接创建（推荐）**
+**方式一：通过 `ThreadPoolExecutor` Constructor 直接创建（推荐）**
 
 ![](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadpoolexecutor-construtors.png)
 
-图中的“默认线程工厂”和“默认拒绝策略”，指的是当前构造函数没有显式传入对应参数时，`ThreadPoolExecutor` 会使用默认实现，并不是方法和说明错位。
+图中的“Default Thread Factory”和“Default Rejection Policy”，指的是当前 Constructor 没有显式传入对应 Parameter 时，`ThreadPoolExecutor` 会使用默认实现，并不是 Method 和说明错位。
 
-这是最推荐的方式，因为它允许开发者明确指定线程池的核心参数，对线程池的运行行为有更精细的控制，从而避免资源耗尽的风险。
+这是最推荐的方式，因为它允许开发者明确指定 Thread Pool 的核心 Parameter，对 Thread Pool 的运行行为有更精细的控制，从而避免资源耗尽的风险。
 
-**方式二：通过 `Executors` 工具类创建（不推荐用于生产环境）**
+**方式二：通过 `Executors` Utility Class 创建（不推荐用于生产环境）**
 
-`Executors` 工具类提供的创建线程池的方法如下图所示：
+`Executors` Utility Class 提供的创建 Thread Pool 的 Method 如下图所示：
 
 ![](https://oss.javaguide.cn/github/javaguide/java/concurrent/executors-new-thread-pool-methods.png)
 
-可以看出，通过 `Executors` 工具类可以创建多种类型的线程池，包括：
+可以看出，通过 `Executors` Utility Class 可以创建多种 Type 的 Thread Pool，包括：
 
-- `FixedThreadPool`：正常运行时最多使用固定数量的工作线程。线程可以因异常终止后被替换，线程池关闭时也会退出，因此并非在整个生命周期中数量始终不变。当有一个新的任务提交时，线程池中若有空闲线程，则立即执行。若没有，则新的任务会被暂存在一个任务队列中，待有线程空闲时，便处理在任务队列中的任务。
-- `SingleThreadExecutor`： 只有一个线程的线程池。若多余一个任务被提交到该线程池，任务会被保存在一个任务队列中，待线程空闲，按先入先出的顺序执行队列中的任务。
-- `CachedThreadPool`： 可根据实际情况调整线程数量的线程池。线程池的线程数量不确定，但若有空闲线程可以复用，则会优先使用可复用的线程。若所有线程均在工作，又有新的任务提交，则会创建新的线程处理任务。所有线程在当前任务执行完毕后，将返回线程池进行复用。
-- `ScheduledThreadPool`：给定的延迟后运行任务或者定期执行任务的线程池。
+- `FixedThreadPool`：正常运行时最多使用固定数量的 Worker Thread。 Thread 可以因 Exception 终止后被替换，Thread Pool 关闭时也会退出，因此并非在整个 Lifecycle 中数量始终不变。当有一个新的 Task 提交时，Thread Pool 中若有 Idle Thread，则立即执行。若没有，则新的 Task 会被暂存在一个 Task Queue 中，待有 Thread 空闲时，便处理在 Task Queue 中的 Task。
+- `SingleThreadExecutor`： 只有一个 Thread 的 Thread Pool。若多余一个 Task 被提交到该 Thread Pool，Task 会被保存在一个 Task Queue 中，待 Thread 空闲，按先入先出的顺序执行 Queue 中的 Task。
+- `CachedThreadPool`： 可根据实际情况调整 Thread Count 的 Thread Pool。 Thread Pool 的 Thread Count 不确定，但若有 Idle Thread 可以复用，则会优先使用可复用的 Thread。若所有 Thread 均在工作，又有新的 Task 提交，则会创建新的 Thread 处理 Task。所有 Thread 在当前 Task 执行完毕后，将返回 Thread Pool 进行复用。
+- `ScheduledThreadPool`：给定的延迟后运行 Task 或者定期执行 Task 的 Thread Pool。
 
-### ⭐️ 为什么不推荐使用内置线程池？
+### ⭐️ 为什么不推荐使用内置 Thread Pool？
 
-在《阿里巴巴 Java 开发手册》“并发处理”这一章节，明确指出线程资源必须通过线程池提供，不允许在应用中自行显式创建线程。
+在《阿里巴巴 Java 开发手册》“Concurrency 处理”这一章节，明确指出 Thread 资源必须通过 Thread Pool 提供，不允许在应用中自行显式创建 Thread。
 
 **为什么呢？**
 
-> 使用线程池的好处是减少在创建和销毁线程上所消耗的时间以及系统资源开销，解决资源不足的问题。如果不使用线程池，有可能会造成系统创建大量同类线程而导致消耗完内存或者“过度切换”的问题。
+> 使用 Thread Pool 的好处是减少在创建和销毁 Thread 上所消耗的时间以及系统资源 Overhead，解决资源不足的问题。如果不使用 Thread Pool，有可能会造成系统创建大量同类 Thread 而导致消耗完内存或者“过度切换”的问题。
 
-另外，《阿里巴巴 Java 开发手册》中强制线程池不允许使用 `Executors` 去创建，而是通过 `ThreadPoolExecutor` 构造函数的方式，这样的处理方式让写的同学更加明确线程池的运行规则，规避资源耗尽的风险
+另外，《阿里巴巴 Java 开发手册》中强制 Thread Pool 不允许使用 `Executors` 去创建，而是通过 `ThreadPoolExecutor` Constructor 的方式，这样的处理方式让写的同学更加明确 Thread Pool 的运行规则，规避资源耗尽的风险
 
-`Executors` 返回线程池对象的弊端如下（后文会详细介绍到）：
+`Executors` 返回 Thread Pool Object 的弊端如下（后文会详细介绍到）：
 
-- `FixedThreadPool` 和 `SingleThreadExecutor`:使用的是阻塞队列 `LinkedBlockingQueue`，任务队列最大长度为 `Integer.MAX_VALUE`，可以看作是无界的，可能堆积大量的请求，从而导致 OOM。
-- `CachedThreadPool`:使用的是同步队列 `SynchronousQueue`, 允许创建的线程数量为 `Integer.MAX_VALUE`，如果任务数量过多且执行速度较慢，可能会创建大量的线程，从而导致 OOM。
-- `ScheduledThreadPool` 和 `SingleThreadScheduledExecutor`:使用的无界的延迟阻塞队列 `DelayedWorkQueue`，任务队列最大长度为 `Integer.MAX_VALUE`,可能堆积大量的请求，从而导致 OOM。
+- `FixedThreadPool` 和 `SingleThreadExecutor`:使用的是 Blocking Queue `LinkedBlockingQueue`，Task Queue 最大 Length 为 `Integer.MAX_VALUE`，可以看作是无界的，可能堆积大量的请求，从而导致 Out of Memory (OOM)。
+- `CachedThreadPool`:使用的是 Synchronous Queue `SynchronousQueue`, 允许创建的 Thread Count 为 `Integer.MAX_VALUE`，如果 Task 数量过多且执行速度较慢，可能会创建大量的 Thread，从而导致 OOM。
+- `ScheduledThreadPool` 和 `SingleThreadScheduledExecutor`:使用的无界的延迟 Blocking Queue `DelayedWorkQueue`，Task Queue 最大 Length 为 `Integer.MAX_VALUE`,可能堆积大量的请求，从而导致 OOM。
 
 ```java
 public static ExecutorService newFixedThreadPool(int nThreads) {
@@ -545,7 +545,7 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
 }
 ```
 
-### ⭐️ 线程池常见参数有哪些？如何解释？
+### ⭐️ Thread Pool 常见 Parameter 有哪些？如何解释？
 
 ```java
     /**
@@ -575,26 +575,26 @@ public ScheduledThreadPoolExecutor(int corePoolSize) {
     }
 ```
 
-`ThreadPoolExecutor` 3 个最重要的参数：
+`ThreadPoolExecutor` 3 个最重要的 Parameter：
 
-- `corePoolSize`：默认情况下，即使空闲也会保留在线程池中的线程数量；未启用核心线程超时且工作线程少于该值时，新任务会优先触发创建线程。
-- `maximumPoolSize`：线程池允许存在的最大工作线程数。
-- `workQueue`：当工作线程数达到 `corePoolSize` 后，新任务会先尝试进入队列；只有入队失败且工作线程数小于 `maximumPoolSize` 时，线程池才会继续创建线程。
+- `corePoolSize`：默认情况下，即使空闲也会保留在 Thread Pool 中的 Thread Count；未启用 Core Thread Timeout 且 Worker Thread 少于该值时，新 Task 会优先触发创建 Thread。
+- `maximumPoolSize`：Thread Pool 允许存在的最大 Worker Thread 数。
+- `workQueue`：当 Worker Thread 数达到 `corePoolSize` 后，新 Task 会先尝试进入 Queue；只有 Enqueue 失败且 Worker Thread 数小于 `maximumPoolSize` 时，Thread Pool 才会继续创建 Thread。
 
-`ThreadPoolExecutor` 其他常见参数 :
+`ThreadPoolExecutor` 其他常见 Parameter :
 
-- `keepAliveTime`:当线程池中的线程数量大于 `corePoolSize`，即有非核心线程（线程池中核心线程以外的线程）时，这些非核心线程空闲后不会立即销毁，而是会等待，直到等待的时间超过了 `keepAliveTime` 才会被回收销毁。
-- `unit` : `keepAliveTime` 参数的时间单位。
-- `threadFactory` :executor 创建新线程的时候会用到。
-- `handler` :拒绝策略（后面会单独详细介绍一下）。
+- `keepAliveTime`:当 Thread Pool 中的 Thread Count 大于 `corePoolSize`，即有 Non-core Thread（Thread Pool 中 Core Thread 以外的 Thread）时，这些 Non-core Thread 空闲后不会立即销毁，而是会等待，直到等待的时间超过了 `keepAliveTime` 才会被回收销毁。
+- `unit` : `keepAliveTime` Parameter 的时间单位。
+- `threadFactory` :executor 创建新 Thread 的时候会用到。
+- `handler` :Rejection Policy（后面会单独详细介绍一下）。
 
-下面这张图可以加深你对线程池中各个参数的相互关系的理解（图片来源：《Java 性能调优实战》）：
+下面这张图可以加深你对 Thread Pool 中各个 Parameter 的相互关系的理解（图片来源：《Java Performance Tuning 实战》）：
 
-![线程池各个参数的关系](https://oss.javaguide.cn/github/javaguide/java/concurrent/relationship-between-thread-pool-parameters.png)
+![Thread Pool 各个 Parameter 的关系](https://oss.javaguide.cn/github/javaguide/java/concurrent/relationship-between-thread-pool-parameters.png)
 
-### 线程池的核心线程会被回收吗？
+### Thread Pool 的 Core Thread 会被回收吗？
 
-`ThreadPoolExecutor` 默认不会回收核心线程，即使它们已经空闲了。这是为了减少创建线程的开销，因为核心线程通常是要长期保持活跃的。但是，如果线程池是被用于周期性使用的场景，且频率不高（周期之间有明显的空闲时间），可以考虑将 `allowCoreThreadTimeOut(boolean value)` 方法的参数设置为 `true`，这样就会回收空闲（时间间隔由 `keepAliveTime` 指定）的核心线程了。
+`ThreadPoolExecutor` 默认不会回收 Core Thread，即使它们已经空闲了。这是为了减少创建 Thread 的 Overhead，因为 Core Thread 通常是要长期保持活跃的。但是，如果 Thread Pool 是被用于周期性使用的场景，且频率不高（周期之间有明显的空闲时间），可以考虑将 `allowCoreThreadTimeOut(boolean value)` Method 的 Parameter 设置为 `true`，这样就会回收空闲（时间间隔由 `keepAliveTime` 指定）的 Core Thread 了。
 
 ```java
 public void allowCoreThreadTimeOut(boolean value) {
@@ -613,25 +613,25 @@ public void allowCoreThreadTimeOut(boolean value) {
 }
 ```
 
-### 核心线程空闲时处于什么状态？
+### Core Thread 空闲时处于什么状态？
 
-核心线程空闲时，其状态分为以下两种情况：
+Core Thread 空闲时，其状态分为以下两种情况：
 
-- **设置了核心线程的存活时间**：核心线程在空闲时，会处于 `WAITING` 状态，等待获取任务。如果阻塞等待的时间超过了核心线程存活时间，则该线程会退出工作，将该线程从线程池的工作线程集合中移除，线程状态变为 `TERMINATED` 状态。
-- **没有设置核心线程的存活时间**：核心线程在空闲时，会一直处于 `WAITING` 状态，等待获取任务，核心线程会一直存活在线程池中。
+- **设置了 Core Thread 的存活时间**：Core Thread 在空闲时，会处于 `WAITING` 状态，等待获取 Task。如果 Blocking 等待的时间超过了 Core Thread 存活时间，则该 Thread 会退出工作，将该 Thread 从 Thread Pool 的 Worker Thread Collection 中移除，Thread State 变为 `TERMINATED` 状态。
+- **没有设置 Core Thread 的存活时间**：Core Thread 在空闲时，会一直处于 `WAITING` 状态，等待获取 Task，Core Thread 会一直存活在 Thread Pool 中。
 
-当队列中有可用任务时，会唤醒被阻塞的线程，线程的状态会由 `WAITING` 状态变为 `RUNNABLE` 状态，之后去执行对应任务。
+当 Queue 中有可用 Task 时，会唤醒被 Blocking 的 Thread，Thread 的状态会由 `WAITING` 状态变为 `RUNNABLE` 状态，之后去执行对应 Task。
 
-接下来通过相关源码，了解一下线程池内部是如何做的。
+接下来通过相关源码，了解一下 Thread Pool 内部是如何做的。
 
-线程在线程池内部被抽象为了 `Worker`，当 `Worker` 被启动之后，会不断去任务队列中获取任务。
+Thread 在 Thread Pool 内部被抽象为了 `Worker`，当 `Worker` 被启动之后，会不断去 Task Queue 中获取 Task。
 
-在获取任务的时候，会根据 `timed` 值来决定从任务队列（`BlockingQueue`）获取任务的行为。
+在获取 Task 的时候，会根据 `timed` 值来决定从 Task Queue（`BlockingQueue`）获取 Task 的行为。
 
-如果「设置了核心线程的存活时间」或者「线程数量超过了核心线程数量」，则将 `timed` 标记为 `true`，表明获取任务时需要使用 `poll()` 指定超时时间。
+如果「设置了 Core Thread 的存活时间」或者「Thread Count 超过了 Core Pool Size 量」，则将 `timed` 标记为 `true`，表明获取 Task 时需要使用 `poll()` 指定 Timeout 时间。
 
-- `timed == true`：使用 `poll(timeout, unit)` 来获取任务。使用 `poll(timeout, unit)` 方法获取任务超时的话，则当前线程会退出执行（`TERMINATED`），该线程从线程池中被移除。
-- `timed == false`：使用 `take()` 来获取任务。使用 `take()` 方法获取任务会让当前线程一直阻塞等待（`WAITING`）。
+- `timed == true`：使用 `poll(timeout, unit)` 来获取 Task。使用 `poll(timeout, unit)` Method 获取 Task Timeout 的话，则 Current Thread 会退出执行（`TERMINATED`），该 Thread 从 Thread Pool 中被移除。
+- `timed == false`：使用 `take()` 来获取 Task。使用 `take()` Method 获取 Task 会让 Current Thread 一直 Blocking 等待（`WAITING`）。
 
 源码如下：
 
@@ -670,16 +670,16 @@ private Runnable getTask() {
 }
 ```
 
-### ⭐️ 线程池的拒绝策略有哪些？
+### ⭐️ Thread Pool 的 Rejection Policy 有哪些？
 
-如果当前同时运行的线程数量达到最大线程数量并且队列也已经被放满了任务时，`ThreadPoolExecutor` 定义一些策略:
+如果当前同时运行的 Thread Count 达到 Maximum Pool Size 量并且 Queue 也已经被放满了 Task 时，`ThreadPoolExecutor` 定义一些策略:
 
-- `ThreadPoolExecutor.AbortPolicy`：抛出 `RejectedExecutionException` 来拒绝新任务的处理。
-- `ThreadPoolExecutor.CallerRunsPolicy`：调用执行者自己的线程运行任务，也就是直接在调用 `execute` 方法的线程中运行(`run`)被拒绝的任务，如果执行程序已关闭，则会丢弃该任务。因此这种策略会降低对于新任务提交速度，影响程序的整体性能。如果你的应用程序可以承受此延迟并且你要求任何一个任务请求都要被执行的话，你可以选择这个策略。
-- `ThreadPoolExecutor.DiscardPolicy`：不处理新任务，直接丢弃掉。
-- `ThreadPoolExecutor.DiscardOldestPolicy`：此策略将丢弃最早的未处理的任务请求。
+- `ThreadPoolExecutor.AbortPolicy`：抛出 `RejectedExecutionException` 来拒绝新 Task 的处理。
+- `ThreadPoolExecutor.CallerRunsPolicy`：调用执行者自己的 Thread 运行 Task，也就是直接在调用 `execute` Method 的 Thread 中运行(`run`)被拒绝的 Task，如果执行程序已关闭，则会丢弃该 Task。因此这种策略会降低对于新 Task 提交速度，影响程序的整体 Performance。如果你的应用程序可以承受此延迟并且你要求任何一个 Task 请求都要被执行的话，你可以选择这个策略。
+- `ThreadPoolExecutor.DiscardPolicy`：不处理新 Task，直接丢弃掉。
+- `ThreadPoolExecutor.DiscardOldestPolicy`：此策略将丢弃最早的未处理的 Task 请求。
 
-举个例子：Spring 通过 `ThreadPoolTaskExecutor` 或者我们直接通过 `ThreadPoolExecutor` 的构造函数创建线程池的时候，当我们不指定 `RejectedExecutionHandler` 拒绝策略来配置线程池的时候，默认使用的是 `AbortPolicy`。在这种拒绝策略下，如果队列满了，`ThreadPoolExecutor` 将抛出 `RejectedExecutionException` 异常来拒绝新来的任务，这代表你将丢失对这个任务的处理。如果希望在线程池仍处于运行状态时避免直接丢弃任务，可以使用 `CallerRunsPolicy`，把任务回退给调用 `execute()` 的线程执行；如果线程池已经关闭，该策略仍会丢弃任务。
+举个例子：Spring 通过 `ThreadPoolTaskExecutor` 或者我们直接通过 `ThreadPoolExecutor` 的 Constructor 创建 Thread Pool 的时候，当我们不指定 `RejectedExecutionHandler` Rejection Policy 来配置 Thread Pool 的时候，默认使用的是 `AbortPolicy`。在这种 Rejection Policy 下，如果 Queue 满了，`ThreadPoolExecutor` 将抛出 `RejectedExecutionException` Exception 来拒绝新来的 Task，这代表你将丢失对这个 Task 的处理。如果希望在 Thread Pool 仍处于运行状态时避免直接丢弃 Task，可以使用 `CallerRunsPolicy`，把 Task 回退给调用 `execute()` 的 Thread 执行；如果 Thread Pool 已经关闭，该策略仍会丢弃 Task。
 
 ```java
 public static class CallerRunsPolicy implements RejectedExecutionHandler {
@@ -695,9 +695,9 @@ public static class CallerRunsPolicy implements RejectedExecutionHandler {
     }
 ```
 
-### 如果希望饱和时尽量不丢弃任务，应该选择哪个拒绝策略？
+### 如果希望饱和时尽量不丢弃 Task，应该选择哪个 Rejection Policy？
 
-对于线程池仍在运行、并且调用线程可以接受同步执行任务的场景，可以考虑 `CallerRunsPolicy`。它不能提供“任何情况下都不丢任务”的保证：线程池关闭后任务会被丢弃，进程崩溃也无法靠内存中的拒绝策略恢复任务；需要强保证时应配合持久化或消息队列。
+对于 Thread Pool 仍在运行、并且调用 Thread 可以接受同步执行 Task 的场景，可以考虑 `CallerRunsPolicy`。它不能提供“任何情况下都不丢 Task”的保证：Thread Pool 关闭后 Task 会被丢弃，Process 崩溃也无法靠内存中的 Rejection Policy 恢复 Task；需要强保证时应配合持久化或 Message Queue。
 
 这里我们再来结合 `CallerRunsPolicy` 的源码来看看：
 
@@ -717,15 +717,15 @@ public static class CallerRunsPolicy implements RejectedExecutionHandler {
     }
 ```
 
-从源码可以看出，只要当前程序不关闭就会使用执行 `execute` 方法的线程执行该任务。
+从源码可以看出，只要当前程序不关闭就会使用执行 `execute` Method 的 Thread 执行该 Task。
 
-### CallerRunsPolicy 拒绝策略有什么风险？如何解决？
+### CallerRunsPolicy Rejection Policy 有什么风险？如何解决？
 
-我们上面也提到了：如果希望在线程池饱和时通过调用线程施加反压、尽量避免直接丢弃任务，`CallerRunsPolicy` 是一种可选方案。
+我们上面也提到了：如果希望在 Thread Pool 饱和时通过调用 Thread 施加 Backpressure、尽量避免直接丢弃 Task，`CallerRunsPolicy` 是一种可选方案。
 
-不过，如果走到 `CallerRunsPolicy` 的任务是个非常耗时的任务，且处理提交任务的线程是主线程，可能会导致主线程阻塞，影响程序的正常运行。
+不过，如果走到 `CallerRunsPolicy` 的 Task 是个非常耗时的 Task，且处理提交 Task 的 Thread 是 Main Thread，可能会导致 Main Thread Blocking，影响程序的正常运行。
 
-这里简单举一个例子，该线程池限定了最大线程数为 2，阻塞队列大小为 1（这意味着第 4 个任务就会走到拒绝策略），`ThreadUtil` 为 Hutool 提供的工具类：
+这里简单举一个例子，该 Thread Pool 限定了 Maximum Pool Size 为 2，Blocking Queue 大小为 1（这意味着第 4 个 Task 就会走到 Rejection Policy），`ThreadUtil` 为 Hutool 提供的 Utility Class：
 
 ```java
 public class ThreadPoolTest {
@@ -789,32 +789,32 @@ public class ThreadPoolTest {
 18:21:48.219 INFO  [pool-1-thread-2] c.j.concurrent.ThreadPoolTest - 核心线程执行第五个任务
 ```
 
-从输出结果可以看出，因为 `CallerRunsPolicy` 这个拒绝策略，导致耗时的任务用了主线程执行，导致线程池阻塞，进而导致后续任务无法及时执行，严重的情况下很可能导致 OOM。
+从输出结果可以看出，因为 `CallerRunsPolicy` 这个 Rejection Policy，导致耗时的 Task 用了 Main Thread 执行，导致 Thread Pool Blocking，进而导致后续 Task 无法及时执行，严重的情况下很可能导致 OOM。
 
-我们从问题的本质入手，调用者采用 `CallerRunsPolicy` 是希望所有的任务都能够被执行，暂时无法处理的任务又被保存在阻塞队列 `BlockingQueue` 中。这样的话，在内存允许的情况下，我们可以增加阻塞队列 `BlockingQueue` 的大小并调整堆内存以容纳更多的任务，确保任务能够被准确执行。
+我们从问题的本质入手，调用者采用 `CallerRunsPolicy` 是希望所有的 Task 都能够被执行，暂时无法处理的 Task 又被保存在 Blocking Queue `BlockingQueue` 中。这样的话，在内存允许的情况下，我们可以增加 Blocking Queue `BlockingQueue` 的大小并调整 Heap Memory 以容纳更多的 Task，确保 Task 能够被准确执行。
 
-为了充分利用 CPU，我们还可以调整线程池的 `maximumPoolSize`（最大线程数）参数，这样可以提高任务处理速度，避免累计在 `BlockingQueue` 的任务过多导致内存用完。
+为了充分利用 CPU，我们还可以调整 Thread Pool 的 `maximumPoolSize`（Maximum Pool Size）Parameter，这样可以提高 Task 处理速度，避免累计在 `BlockingQueue` 的 Task 过多导致内存用完。
 
-![调整阻塞队列大小和最大线程数](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadpool-reject-2-threadpool-reject-01.png)
+![调整 Blocking Queue 大小和 Maximum Pool Size](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadpool-reject-2-threadpool-reject-01.png)
 
-如果服务器资源已达到可利用的极限，这就意味我们要在设计策略上改变线程池的调度了，我们都知道，导致主线程卡死的本质就是因为我们不希望任何一个任务被丢弃。换个思路，有没有办法既能保证任务不被丢弃且在服务器有余力时及时处理呢？
+如果服务器资源已达到可利用的极限，这就意味我们要在设计策略上改变 Thread Pool 的调度了，我们都知道，导致 Main Thread 卡死的本质就是因为我们不希望任何一个 Task 被丢弃。换个思路，有没有办法既能保证 Task 不被丢弃且在服务器有余力时及时处理呢？
 
-这里提供的一种**任务持久化**的思路，这里所谓的任务持久化，包括但不限于:
+这里提供的一种**Task 持久化**的思路，这里所谓的 Task 持久化，包括但不限于:
 
-1. 设计一张任务表将任务存储到 MySQL 数据库中。
-2. Redis 缓存任务。
-3. 将任务提交到消息队列中。
+1. 设计一张 Task 表将 Task 存储到 MySQL Database 中。
+2. Redis 缓存 Task。
+3. 将 Task 提交到 Message Queue 中。
 
 这里以方案一为例，简单介绍一下实现逻辑：
 
-1. 实现 `RejectedExecutionHandler` 接口自定义拒绝策略，自定义拒绝策略负责将线程池暂时无法处理（此时阻塞队列已满）的任务入库（保存到 MySQL 中）。注意：线程池暂时无法处理的任务会先被放在阻塞队列中，阻塞队列满了才会触发拒绝策略。
-2. 继承 `BlockingQueue` 实现一个混合式阻塞队列，该队列包含 JDK 自带的 `ArrayBlockingQueue`。另外，该混合式阻塞队列需要修改取任务处理的逻辑，也就是重写 `take()` 方法，取任务时优先从数据库中读取最早的任务，数据库中无任务时再从 `ArrayBlockingQueue` 中去取任务。
+1. 实现 `RejectedExecutionHandler` Interface 自定义 Rejection Policy，自定义 Rejection Policy 负责将 Thread Pool 暂时无法处理（此时 Blocking Queue 已满）的 Task 入库（保存到 MySQL 中）。注意：Thread Pool 暂时无法处理的 Task 会先被放在 Blocking Queue 中，Blocking Queue 满了才会触发 Rejection Policy。
+2. Inheritance `BlockingQueue` 实现一个混合式 Blocking Queue，该 Queue 包含 JDK 自带的 `ArrayBlockingQueue`。另外，该混合式 Blocking Queue 需要修改取 Task 处理的逻辑，也就是 Override `take()` Method，取 Task 时优先从 Database 中读取最早的 Task，Database 中无 Task 时再从 `ArrayBlockingQueue` 中去取 Task。
 
-![将一部分任务保存到MySQL中](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadpool-reject-2-threadpool-reject-02.png)
+![将一部分 Task 保存到MySQL中](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadpool-reject-2-threadpool-reject-02.png)
 
-整个实现逻辑还是比较简单的，核心在于自定义拒绝策略和阻塞队列。如此一来，一旦我们的线程池中线程达到满载时，我们就可以通过拒绝策略将最新任务持久化到 MySQL 数据库中，等到线程池有了有余力处理所有任务时，让其优先处理数据库中的任务以避免“饥饿”问题。
+整个实现逻辑还是比较简单的，核心在于自定义 Rejection Policy 和 Blocking Queue。如此一来，一旦我们的 Thread Pool 中 Thread 达到满载时，我们就可以通过 Rejection Policy 将最新 Task 持久化到 MySQL Database 中，等到 Thread Pool 有了有余力处理所有 Task 时，让其优先处理 Database 中的 Task 以避免“Starvation”问题。
 
-当然，对于这个问题，我们也可以参考其他主流框架的做法，以 Netty 为例，它的拒绝策略则是直接创建一个线程池以外的线程处理这些任务，为了保证任务的实时处理，这种做法可能需要良好的硬件设备且临时创建的线程无法做到准确的监控：
+当然，对于这个问题，我们也可以参考其他主流框架的做法，以 Netty 为例，它的 Rejection Policy 则是直接创建一个 Thread Pool 以外的 Thread 处理这些 Task，为了保证 Task 的实时处理，这种做法可能需要良好的硬件设备且临时创建的 Thread 无法做到准确的 Monitoring：
 
 ```java
 private static final class NewThreadRunsPolicy implements RejectedExecutionHandler {
@@ -834,7 +834,7 @@ private static final class NewThreadRunsPolicy implements RejectedExecutionHandl
 }
 ```
 
-ActiveMQ 则是尝试在指定的时效内尽可能的争取将任务入队，以保证最大交付：
+ActiveMQ 则是尝试在指定的时效内尽可能的争取将 Task Enqueue，以保证最大交付：
 
 ```java
 new RejectedExecutionHandler() {
@@ -851,53 +851,53 @@ new RejectedExecutionHandler() {
             });
 ```
 
-### 线程池常用的阻塞队列有哪些？
+### Thread Pool 常用的 Blocking Queue 有哪些？
 
-新任务来的时候会先判断当前运行的线程数量是否达到核心线程数，如果达到的话，新任务就会被存放在队列中。
+新 Task 来的时候会先判断当前运行的 Thread Count 是否达到 Core Pool Size，如果达到的话，新 Task 就会被存放在 Queue 中。
 
-不同的线程池会选用不同的阻塞队列，我们可以结合内置线程池来分析。
+不同的 Thread Pool 会选用不同的 Blocking Queue，我们可以结合内置 Thread Pool 来分析。
 
-- 容量为 `Integer.MAX_VALUE` 的 `LinkedBlockingQueue`（无界阻塞队列）：`FixedThreadPool` 和 `SingleThreadExecutor`。`FixedThreadPool` 最多只能创建核心线程数的线程（核心线程数和最大线程数相等），`SingleThreadExecutor` 只能创建一个线程（核心线程数和最大线程数都是 1），二者的任务队列永远不会被放满。
-- `SynchronousQueue`（同步队列）：`CachedThreadPool`。`SynchronousQueue` 没有容量，不存储元素，目的是保证对于提交的任务，如果有空闲线程，则使用空闲线程来处理；否则新建一个线程来处理任务。也就是说，`CachedThreadPool` 的最大线程数是 `Integer.MAX_VALUE`，可以理解为线程数是可以无限扩展的，可能会创建大量线程，从而导致 OOM。
-- `DelayedWorkQueue`（延迟队列）：`ScheduledThreadPool` 和 `SingleThreadScheduledExecutor`。`DelayedWorkQueue` 的内部元素并不是按照放入的时间排序，而是会按照延迟的时间长短对任务进行排序，内部采用的是“堆”的数据结构，可以保证每次出队的任务都是当前队列中执行时间最靠前的。`DelayedWorkQueue` 是一个无界队列。其底层虽然是数组，但当数组容量不足时，它会自动进行扩容，因此队列永远不会被填满。当任务不断提交时，它们会全部被添加到队列中。这意味着线程池的线程数量永远不会超过其核心线程数，最大线程数参数对于使用该队列的线程池来说是无效的。
-- `ArrayBlockingQueue`（有界阻塞队列）：底层由数组实现，容量一旦创建，就不能修改。
+- Capacity 为 `Integer.MAX_VALUE` 的 `LinkedBlockingQueue`（无界 Blocking Queue）：`FixedThreadPool` 和 `SingleThreadExecutor`。`FixedThreadPool` 最多只能创建 Core Pool Size 的 Thread（Core Pool Size 和 Maximum Pool Size 相等），`SingleThreadExecutor` 只能创建一个 Thread（Core Pool Size 和 Maximum Pool Size 都是 1），二者的 Task Queue 永远不会被放满。
+- `SynchronousQueue`（Synchronous Queue）：`CachedThreadPool`。`SynchronousQueue` 没有 Capacity，不存储元素，目的是保证对于提交的 Task，如果有 Idle Thread，则使用 Idle Thread 来处理；否则新建一个 Thread 来处理 Task。也就是说，`CachedThreadPool` 的 Maximum Pool Size 是 `Integer.MAX_VALUE`，可以理解为 Thread Count 是可以无限扩展的，可能会创建大量 Thread，从而导致 OOM。
+- `DelayedWorkQueue`（Delay Queue）：`ScheduledThreadPool` 和 `SingleThreadScheduledExecutor`。`DelayedWorkQueue` 的内部元素并不是按照放入的时间排序，而是会按照延迟的时间长短对 Task 进行排序，内部采用的是“Heap”的 Data Structure，可以保证每次 Dequeue 的 Task 都是当前 Queue 中执行时间最靠前的。`DelayedWorkQueue` 是一个无界 Queue。其底层虽然是 Array，但当 Array Capacity 不足时，它会自动进行 Resize，因此 Queue 永远不会被填满。当 Task 不断提交时，它们会全部被添加到 Queue 中。这意味着 Thread Pool 的 Thread Count 永远不会超过其 Core Pool Size，Maximum Pool Size Parameter 对于使用该 Queue 的 Thread Pool 来说是无效的。
+- `ArrayBlockingQueue`（有界 Blocking Queue）：底层由 Array 实现，Capacity 一旦创建，就不能修改。
 
-### ⭐️ 线程池处理任务的流程了解吗？
+### ⭐️ Thread Pool 处理 Task 的流程了解吗？
 
-![图解线程池实现原理](https://oss.javaguide.cn/github/javaguide/java/concurrent/thread-pool-principle.png)
+![图解 Thread Pool 实现原理](https://oss.javaguide.cn/github/javaguide/java/concurrent/thread-pool-principle.png)
 
-1. 如果当前运行的线程数小于核心线程数，那么就会新建一个线程来执行任务。
-2. 如果当前运行的线程数等于或大于核心线程数，但是小于最大线程数，那么就把该任务放入到任务队列里等待执行。
-3. 如果向任务队列投放任务失败（任务队列已经满了），但是当前运行的线程数是小于最大线程数的，就新建一个线程来执行任务。
-4. 如果当前运行的线程数已经等同于最大线程数了，新建线程将会使当前运行的线程超出最大线程数，那么当前任务会被拒绝，拒绝策略会调用 `RejectedExecutionHandler.rejectedExecution()` 方法。
+1. 如果当前运行的 Thread Count 小于 Core Pool Size，那么就会新建一个 Thread 来执行 Task。
+2. 如果当前运行的 Thread Count 等于或大于 Core Pool Size，但是小于 Maximum Pool Size，那么就把该 Task 放入到 Task Queue 里等待执行。
+3. 如果向 Task Queue 投放 Task 失败（Task Queue 已经满了），但是当前运行的 Thread Count 是小于 Maximum Pool Size 的，就新建一个 Thread 来执行 Task。
+4. 如果当前运行的 Thread Count 已经等同于 Maximum Pool Size 了，新建 Thread 将会使当前运行的 Thread 超出 Maximum Pool Size，那么当前 Task 会被拒绝，Rejection Policy 会调用 `RejectedExecutionHandler.rejectedExecution()` Method。
 
-再提一个有意思的小问题：**线程池在提交任务前，可以提前创建线程吗？**
+再提一个有意思的小问题：**Thread Pool 在提交 Task 前，可以提前创建 Thread 吗？**
 
-答案是可以的！`ThreadPoolExecutor` 提供了两个方法帮助我们在提交任务之前，完成核心线程的创建，从而实现线程池预热的效果：
+答案是可以的！`ThreadPoolExecutor` 提供了两个 Method 帮助我们在提交 Task 之前，完成 Core Thread 的创建，从而实现 Thread Pool 预热的效果：
 
-- `prestartCoreThread()`:启动一个线程，等待任务，如果已达到核心线程数，这个方法返回 false，否则返回 true；
-- `prestartAllCoreThreads()`:启动所有的核心线程，并返回启动成功的核心线程数。
+- `prestartCoreThread()`:启动一个 Thread，等待 Task，如果已达到 Core Pool Size，这个 Method 返回 false，否则返回 true；
+- `prestartAllCoreThreads()`:启动所有的 Core Thread，并返回启动成功的 Core Pool Size。
 
-### ⭐️ 线程池中线程异常后，销毁还是复用？
+### ⭐️ Thread Pool 中 Thread Exception 后，销毁还是复用？
 
 直接说结论，需要分两种情况：
 
-- **使用 `execute()` 提交任务**：当任务通过 `execute()` 提交到线程池并在执行过程中抛出异常时，如果这个异常没有在任务内被捕获，那么该异常会导致当前线程终止，并且异常会被打印到控制台或日志文件中。线程池会检测到这种线程终止，并创建一个新线程来替换它，从而保持配置的线程数不变。
-- **使用 `submit()` 提交任务**：对于通过 `submit()` 提交的任务，如果在任务执行中发生异常，这个异常不会直接打印出来。相反，异常会被封装在由 `submit()` 返回的 `Future` 对象中。当调用 `Future.get()` 方法时，可以捕获到一个 `ExecutionException`。在这种情况下，线程不会因为异常而终止，它会继续存在于线程池中，准备执行后续的任务。
+- **使用 `execute()` 提交 Task**：当 Task 通过 `execute()` 提交到 Thread Pool 并在执行过程中抛出 Exception 时，如果这个 Exception 没有在 Task 内被捕获，那么该 Exception 会导致 Current Thread 终止，并且 Exception 会被打印到控制台或 Log 文件中。 Thread Pool 会检测到这种 Thread 终止，并创建一个新 Thread 来替换它，从而保持配置的 Thread Count 不变。
+- **使用 `submit()` 提交 Task**：对于通过 `submit()` 提交的 Task，如果在 Task 执行中发生 Exception，这个 Exception 不会直接打印出来。相反，Exception 会被 Encapsulate 在由 `submit()` 返回的 `Future` Object 中。当调用 `Future.get()` Method 时，可以捕获到一个 `ExecutionException`。在这种情况下，Thread 不会因为 Exception 而终止，它会继续存在于 Thread Pool 中，准备执行后续的 Task。
 
-简单来说：使用 `execute()` 时，未捕获异常导致线程终止，线程池创建新线程替代；使用 `submit()` 时，异常被封装在 `Future` 中，线程继续复用。
+简单来说：使用 `execute()` 时，未捕获 Exception 导致 Thread 终止，Thread Pool 创建新 Thread 替代；使用 `submit()` 时，Exception 被 Encapsulate 在 `Future` 中，Thread 继续复用。
 
-这种设计允许 `submit()` 提供更灵活的错误处理机制，因为它允许调用者决定如何处理异常，而 `execute()` 则适用于那些不需要关注执行结果的场景。
+这种设计允许 `submit()` 提供更灵活的错误处理机制，因为它允许调用者决定如何处理 Exception，而 `execute()` 则适用于那些不需要关注执行结果的场景。
 
-具体的源码分析可以参考这篇：[线程池中线程异常后：销毁还是复用？ - 京东技术](https://mp.weixin.qq.com/s/9ODjdUU-EwQFF5PrnzOGfw)。
+具体的源码分析可以参考这篇：[Thread Pool 中 Thread Exception 后：销毁还是复用？ - 京东技术](https://mp.weixin.qq.com/s/9ODjdUU-EwQFF5PrnzOGfw)。
 
-### ⭐️ 如何给线程池命名？
+### ⭐️ 如何给 Thread Pool 命名？
 
-初始化线程池的时候需要显示命名（设置线程池名称前缀），有利于定位问题。
+Initialization Thread Pool 的时候需要显示命名（设置 Thread Pool 名称前缀），有利于定位问题。
 
-默认情况下创建的线程名字类似 `pool-1-thread-n` 这样的，没有业务含义，不利于我们定位问题。
+默认情况下创建的 Thread 名字类似 `pool-1-thread-n` 这样的，没有业务含义，不利于我们定位问题。
 
-给线程池里的线程命名通常有下面两种方式：
+给 Thread Pool 里的 Thread 命名通常有下面两种方式：
 
 **1、利用 guava 的 `ThreadFactoryBuilder`**
 
@@ -938,109 +938,109 @@ public final class NamingThreadFactory implements ThreadFactory {
 }
 ```
 
-### 如何设定线程池的大小？
+### 如何设定 Thread Pool 的大小？
 
-很多人甚至可能都会觉得把线程池配置过大一点比较好！我觉得这明显是有问题的。就拿我们生活中非常常见的一例子来说：**并不是人多就能把事情做好，增加了沟通交流成本。你本来一件事情只需要 3 个人做，你硬是拉来了 6 个人，会提升做事效率嘛？我想并不会。** 线程数量过多的影响也是和我们分配多少人做事情一样，对于多线程这个场景来说主要是增加了**上下文切换**成本。不清楚什么是上下文切换的话，可以看我下面的介绍。
+很多人甚至可能都会觉得把 Thread Pool 配置过大一点比较好！我觉得这明显是有问题的。就拿我们生活中非常常见的一例子来说：**并不是人多就能把事情做好，增加了沟通交流成本。你本来一件事情只需要 3 个人做，你硬是拉来了 6 个人，会提升做事效率嘛？我想并不会。** Thread Count 过多的影响也是和我们分配多少人做事情一样，对于 Multithreading 这个场景来说主要是增加了**Context Switch**成本。不清楚什么是 Context Switch 的话，可以看我下面的介绍。
 
-> 上下文切换：
+> Context Switch：
 >
-> 多线程编程中一般线程的个数都大于 CPU 核心的个数，而一个 CPU 核心在任意时刻只能被一个线程使用，为了让这些线程都能得到有效执行，CPU 采取的策略是为每个线程分配时间片并轮转的形式。当一个线程的时间片用完的时候就会重新处于就绪状态让给其他线程使用，这个过程就属于一次上下文切换。概括来说就是：当前任务在执行完 CPU 时间片切换到另一个任务之前会先保存自己的状态，以便下次再切换回这个任务时，可以再加载这个任务的状态。**任务从保存到再加载的过程就是一次上下文切换**。
+> Multithreaded Programming 中一般 Thread 的个数都大于 CPU 核心的个数，而一个 CPU 核心在任意时刻只能被一个 Thread 使用，为了让这些 Thread 都能得到有效执行，CPU 采取的策略是为每个 Thread 分配 Time Slice 并轮转的形式。当一个 Thread 的 Time Slice 用完的时候就会重新处于就绪状态让给其他 Thread 使用，这个过程就属于一次 Context Switch。概括来说就是：当前 Task 在执行完 CPU Time Slice 切换到另一个 Task 之前会先保存自己的状态，以便下次再切换回这个 Task 时，可以再加载这个 Task 的状态。**Task 从保存到再加载的过程就是一次 Context Switch**。
 >
-> 上下文切换通常是计算密集型的。也就是说，它需要相当可观的处理器时间，在每秒几十上百次的切换中，每次切换都需要纳秒量级的时间。所以，上下文切换对系统来说意味着消耗大量的 CPU 时间，事实上，可能是操作系统中时间消耗最大的操作。
+> Context Switch 通常是计算密集型的。也就是说，它需要相当可观的处理器时间，在每秒几十上百次的切换中，每次切换都需要纳秒量级的时间。所以，Context Switch 对系统来说意味着消耗大量的 CPU 时间，事实上，可能是 Operating System 中时间消耗最大的操作。
 >
-> Linux 相比与其他操作系统（包括其他类 Unix 系统）有很多的优点，其中有一项就是，其上下文切换和模式切换的时间消耗非常少。
+> Linux 相比与其他 Operating System（包括其他 Class Unix 系统）有很多的优点，其中有一项就是，其 Context Switch 和模式切换的时间消耗非常少。
 
-类比于现实世界中的人类通过合作做某件事情，我们可以肯定的一点是线程池大小设置过大或者过小都会有问题，合适的才是最好。
+类比于现实世界中的人 Class 通过合作做某件事情，我们可以肯定的一点是 Thread Pool 大小设置过大或者过小都会有问题，合适的才是最好。
 
-- 如果我们设置的线程池数量太小的话，如果同一时间有大量任务/请求需要处理，可能会导致大量的请求/任务在任务队列中排队等待执行，甚至会出现任务队列满了之后任务/请求无法处理的情况，或者大量任务堆积在任务队列导致 OOM。这样很明显是有问题的，CPU 根本没有得到充分利用。
-- 如果我们设置线程数量太大，大量线程可能会同时在争取 CPU 资源，这样会导致大量的上下文切换，从而增加线程的执行时间，影响了整体执行效率。
+- 如果我们设置的 Thread Pool 数量太小的话，如果同一时间有大量 Task/请求需要处理，可能会导致大量的请求/Task 在 Task Queue 中排队等待执行，甚至会出现 Task Queue 满了之后 Task/请求无法处理的情况，或者大量 Task 堆积在 Task Queue 导致 OOM。这样很明显是有问题的，CPU 根本没有得到充分利用。
+- 如果我们设置 Thread Count 太大，大量 Thread 可能会同时在争取 CPU 资源，这样会导致大量的 Context Switch，从而增加 Thread 的执行时间，影响了整体执行效率。
 
 有一个简单并且适用面比较广的公式：
 
-- **CPU 密集型任务(N+1)：** 这种任务消耗的主要是 CPU 资源，可以将线程数设置为 N（CPU 核心数）+1。比 CPU 核心数多出来的一个线程是为了防止线程偶发的缺页中断，或者其它原因导致的任务暂停而带来的影响。一旦任务暂停，CPU 就会处于空闲状态，而在这种情况下多出来的一个线程就可以充分利用 CPU 的空闲时间。
-- **I/O 密集型任务(2N)：** 这种任务应用起来，系统会用大部分的时间来处理 I/O 交互，而线程在处理 I/O 的时间段内不会占用 CPU 来处理，这时就可以将 CPU 交出给其它线程使用。因此在 I/O 密集型任务的应用中，我们可以多配置一些线程，具体的计算方法是 2N。
+- **CPU 密集型 Task(N+1)：** 这种 Task 消耗的主要是 CPU 资源，可以将 Thread Count 设置为 N（CPU 核心数）+1。比 CPU 核心数多出来的一个 Thread 是为了防止 Thread 偶发的缺页 Interrupt，或者其它原因导致的 Task 暂停而带来的影响。一旦 Task 暂停，CPU 就会处于空闲状态，而在这种情况下多出来的一个 Thread 就可以充分利用 CPU 的空闲时间。
+- **I/O 密集型 Task(2N)：** 这种 Task 应用起来，系统会用大部分的时间来处理 I/O 交互，而 Thread 在处理 I/O 的时间段内不会占用 CPU 来处理，这时就可以将 CPU 交出给其它 Thread 使用。因此在 I/O 密集型 Task 的应用中，我们可以多配置一些 Thread，具体的计算方法是 2N。
 
-**如何判断是 CPU 密集任务还是 IO 密集任务？**
+**如何判断是 CPU 密集 Task 还是 IO 密集 Task？**
 
-CPU 密集型简单理解就是利用 CPU 计算能力的任务比如你在内存中对大量数据进行排序。但凡涉及到网络读取，文件读取这类都是 IO 密集型，这类任务的特点是 CPU 计算耗费时间相比于等待 IO 操作完成的时间来说很少，大部分时间都花在了等待 IO 操作完成上。
+CPU 密集型简单理解就是利用 CPU 计算能力的 Task 比如你在内存中对大量数据进行排序。但凡涉及到网络读取，文件读取这类都是 IO 密集型，这类 Task 的特点是 CPU 计算耗费时间相比于等待 IO 操作完成的时间来说很少，大部分时间都花在了等待 IO 操作完成上。
 
 > 🌈 拓展一下（参见：[issue#1737](https://github.com/Snailclimb/JavaGuide/issues/1737)）：
 >
-> 线程数更严谨的计算的方法应该是：`最佳线程数 = N（CPU 核心数）∗（1+WT（线程等待时间）/ST（线程计算时间））`，其中 `WT（线程等待时间）=线程运行总时间 - ST（线程计算时间）`。
+> Thread Count 更严谨的计算的方法应该是：`最佳线程数 = N（CPU 核心数）∗（1+WT（线程等待时间）/ST（线程计算时间））`，其中 `WT（线程等待时间）=线程运行总时间 - ST（线程计算时间）`。
 >
-> 线程等待时间所占比例越高，需要越多线程。线程计算时间所占比例越高，需要越少线程。
+> Thread 等待时间所占比例越高，需要越 Multithreading。 Thread 计算时间所占比例越高，需要越少 Thread。
 >
 > 我们可以通过 JDK 自带的工具 VisualVM 来查看 `WT/ST` 比例。
 >
-> CPU 密集型任务的 `WT/ST` 接近或者等于 0，因此， 线程数可以设置为 N（CPU 核心数）∗（1+0）= N，和我们上面说的 N（CPU 核心数）+1 差不多。
+> CPU 密集型 Task 的 `WT/ST` 接近或者等于 0，因此， Thread Count 可以设置为 N（CPU 核心数）∗（1+0）= N，和我们上面说的 N（CPU 核心数）+1 差不多。
 >
-> IO 密集型任务下，几乎全是线程等待时间，从理论上来说，你就可以将线程数设置为 2N（按道理来说，WT/ST 的结果应该比较大，这里选择 2N 的原因应该是为了避免创建过多线程吧）。
+> IO 密集型 Task 下，几乎全是 Thread 等待时间，从理论上来说，你就可以将 Thread Count 设置为 2N（按道理来说，WT/ST 的结果应该比较大，这里选择 2N 的原因应该是为了避免创建过 Multithreading 吧）。
 
-公式也只是参考，具体还是要根据项目实际线上运行情况来动态调整。我在后面介绍的美团的线程池参数动态配置这种方案就非常不错，很实用！
+公式也只是参考，具体还是要根据项目实际线上运行情况来动态调整。我在后面介绍的美团的 Thread Pool Parameter 动态配置这种方案就非常不错，很实用！
 
-### ⭐️ 如何动态修改线程池的参数？
+### ⭐️ 如何动态修改 Thread Pool 的 Parameter？
 
-美团技术团队在[《Java 线程池实现原理及其在美团业务中的实践》](https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html)这篇文章中介绍到对线程池参数实现可自定义配置的思路和方法。
+美团技术团队在[《Java Thread Pool 实现原理及其在美团业务中的实践》](https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html)这篇文章中介绍到对 Thread Pool Parameter 实现可自定义配置的思路和 Method。
 
-美团技术团队的思路是主要对线程池的核心参数实现自定义可配置。这三个核心参数是：
+美团技术团队的思路是主要对 Thread Pool 的核心 Parameter 实现自定义可配置。这三个核心 Parameter 是：
 
-- **`corePoolSize`：** 默认情况下，即使空闲也会保留在线程池中的线程数量；工作线程少于该值时，新任务会优先触发创建线程。
-- **`maximumPoolSize`：** 线程池允许存在的最大工作线程数。
-- **`workQueue`：** 工作线程数达到 `corePoolSize` 后，新任务会先尝试进入队列；入队失败时才会在不超过 `maximumPoolSize` 的前提下继续创建线程。
+- **`corePoolSize`：** 默认情况下，即使空闲也会保留在 Thread Pool 中的 Thread Count；Worker Thread 少于该值时，新 Task 会优先触发创建 Thread。
+- **`maximumPoolSize`：** Thread Pool 允许存在的最大 Worker Thread 数。
+- **`workQueue`：** Worker Thread 数达到 `corePoolSize` 后，新 Task 会先尝试进入 Queue；Enqueue 失败时才会在不超过 `maximumPoolSize` 的前提下继续创建 Thread。
 
-**为什么是这三个参数？**
+**为什么是这三个 Parameter？**
 
-我在[Java 线程池详解](https://javaguide.cn/java/concurrent/java-thread-pool-summary.html) 这篇文章中就说过这三个参数是 `ThreadPoolExecutor` 最重要的参数，它们基本决定了线程池对于任务的处理策略。
+我在[Java Thread Pool 详解](https://javaguide.cn/java/concurrent/java-thread-pool-summary.html) 这篇文章中就说过这三个 Parameter 是 `ThreadPoolExecutor` 最重要的 Parameter，它们基本决定了 Thread Pool 对于 Task 的处理策略。
 
-**如何支持参数动态配置？** 且看 `ThreadPoolExecutor` 提供的下面这些方法。
+**如何支持 Parameter 动态配置？** 且看 `ThreadPoolExecutor` 提供的下面这些 Method。
 
 ![](https://oss.javaguide.cn/github/javaguide/java/concurrent/threadpoolexecutor-methods.png)
 
-格外需要注意的是 `corePoolSize`。运行期间调小该参数后，超过新核心线程数的现有线程会在下一次空闲时终止；调大时，如果队列中已有任务，线程池会按需启动新线程处理。
+格外需要注意的是 `corePoolSize`。运行期间调小该 Parameter 后，超过新 Core Pool Size 的现有 Thread 会在下一次空闲时终止；调大时，如果 Queue 中已有 Task，Thread Pool 会按需启动新 Thread 处理。
 
-另外，你也看到了上面并没有动态指定队列长度的方法，美团的方式是自定义了一个叫做 `ResizableCapacityLinkedBlockingQueue` 的队列（主要就是把 `LinkedBlockingQueue` 的 capacity 字段的 final 关键字修饰给去掉了，让它变为可变的）。
+另外，你也看到了上面并没有动态指定 Queue Length 的 Method，美团的方式是自定义了一个叫做 `ResizableCapacityLinkedBlockingQueue` 的 Queue（主要就是把 `LinkedBlockingQueue` 的 capacity Field 的 final Keyword 修饰给去掉了，让它变为可变的）。
 
-最终实现的可动态修改线程池参数效果如下。👏👏👏
+最终实现的可动态修改 Thread Pool Parameter 效果如下。👏👏👏
 
-![动态配置线程池参数最终效果](https://oss.javaguide.cn/github/javaguide/java/concurrent/meituan-dynamically-configuring-thread-pool-parameters.png)
+![动态配置 Thread Pool Parameter 最终效果](https://oss.javaguide.cn/github/javaguide/java/concurrent/meituan-dynamically-configuring-thread-pool-parameters.png)
 
-还没看够？我在[《后端面试高频系统设计&场景题》](https://javaguide.cn/zhuanlan/back-end-interview-high-frequency-system-design-and-scenario-questions.html)中详细介绍了如何设计一个动态线程池，这也是面试中常问的一道系统设计题。
+还没看够？我在[《后端面试高频系统设计&场景题》](https://javaguide.cn/zhuanlan/back-end-interview-high-frequency-system-design-and-scenario-questions.html)中详细介绍了如何设计一个动态 Thread Pool，这也是面试中常问的一道系统设计题。
 
 ![《后端面试高频系统设计&场景题》](https://oss.javaguide.cn/xingqiu/back-end-interview-high-frequency-system-design-and-scenario-questions-fengmian.png)
 
 如果我们的项目也想要实现这种效果的话，可以借助现成的开源项目：
 
-- **[Hippo4j](https://github.com/opengoofy/hippo4j)**：异步线程池框架，支持线程池动态变更&监控&报警，无需修改代码轻松引入。支持多种使用模式，轻松引入，致力于提高系统运行保障能力。
-- **[Dynamic TP](https://github.com/dromara/dynamic-tp)**：轻量级动态线程池，内置监控告警功能，集成三方中间件线程池管理，基于主流配置中心（已支持 Nacos、Apollo，Zookeeper、Consul、Etcd，可通过 SPI 自定义实现）。
+- **[Hippo4j](https://github.com/opengoofy/hippo4j)**：Asynchronous Thread Pool 框架，支持 Thread Pool 动态变更&Monitoring&报警，无需修改代码轻松引入。支持多种使用模式，轻松引入，致力于提高系统运行保障能力。
+- **[Dynamic TP](https://github.com/dromara/dynamic-tp)**：轻量级动态 Thread Pool，内置 Monitoring Alert 功能，集成三方中间件 Thread Pool 管理，基于主流配置中心（已支持 Nacos、Apollo，Zookeeper、Consul、Etcd，可通过 SPI 自定义实现）。
 
-### ⭐️ 如何设计一个能够根据任务的优先级来执行的线程池？
+### ⭐️ 如何设计一个能够根据 Task 的优先级来执行的 Thread Pool？
 
-这是一个常见的面试问题，本质其实还是在考察求职者对于线程池以及阻塞队列的掌握。
+这是一个常见的面试问题，本质其实还是在考察求职者对于 Thread Pool 以及 Blocking Queue 的掌握。
 
-我们上面也提到了，不同的线程池会选用不同的阻塞队列作为任务队列。`FixedThreadPool` 使用默认容量为 `Integer.MAX_VALUE` 的 `LinkedBlockingQueue`，通常将其视为无界队列；实际应用几乎无法填满，因此 `FixedThreadPool` 通常只会创建 `corePoolSize` 个工作线程。
+我们上面也提到了，不同的 Thread Pool 会选用不同的 Blocking Queue 作为 Task Queue。`FixedThreadPool` 使用默认 Capacity 为 `Integer.MAX_VALUE` 的 `LinkedBlockingQueue`，通常将其视为无界 Queue；实际应用几乎无法填满，因此 `FixedThreadPool` 通常只会创建 `corePoolSize` 个 Worker Thread。
 
-假如我们需要实现一个优先级任务线程池的话，那可以考虑使用 `PriorityBlockingQueue`（优先级阻塞队列）作为任务队列（`ThreadPoolExecutor` 的构造函数有一个 `workQueue` 参数可以传入任务队列）。
+假如我们需要实现一个优先级 Task Thread Pool 的话，那可以考虑使用 `PriorityBlockingQueue`（优先级 Blocking Queue）作为 Task Queue（`ThreadPoolExecutor` 的 Constructor 有一个 `workQueue` Parameter 可以传入 Task Queue）。
 
-![ThreadPoolExecutor构造函数](https://oss.javaguide.cn/github/javaguide/java/concurrent/common-parameters-of-threadpool-workqueue.jpg)
+![ThreadPoolExecutor Constructor](https://oss.javaguide.cn/github/javaguide/java/concurrent/common-parameters-of-threadpool-workqueue.jpg)
 
-`PriorityBlockingQueue` 是一个支持优先级的无界阻塞队列，可以看作是线程安全的 `PriorityQueue`，两者底层都是使用小顶堆形式的二叉堆，即值最小的元素优先出队。不过，`PriorityQueue` 不支持阻塞操作。
+`PriorityBlockingQueue` 是一个支持优先级的无界 Blocking Queue，可以看作是 Thread-safe 的 `PriorityQueue`，两者底层都是使用小顶 Heap 形式的二叉 Heap，即值最小的元素优先 Dequeue。不过，`PriorityQueue` 不支持 Blocking Operation。
 
-要想让 `PriorityBlockingQueue` 实现对任务的排序，传入其中的任务必须是具备排序能力的，方式有两种：
+要想让 `PriorityBlockingQueue` 实现对 Task 的排序，传入其中的 Task 必须是具备排序能力的，方式有两种：
 
-1. 提交到线程池的任务实现 `Comparable` 接口，并重写 `compareTo` 方法来指定任务之间的优先级比较规则。
-2. 创建 `PriorityBlockingQueue` 时传入一个 `Comparator` 对象来指定任务之间的排序规则（推荐）。
+1. 提交到 Thread Pool 的 Task 实现 `Comparable` Interface，并 Override `compareTo` Method 来指定 Task 之间的优先级比较规则。
+2. 创建 `PriorityBlockingQueue` 时传入一个 `Comparator` Object 来指定 Task 之间的排序规则（推荐）。
 
 不过，这存在一些风险和问题，比如：
 
 - `PriorityBlockingQueue` 是无界的，可能堆积大量的请求，从而导致 OOM。
-- 可能会导致饥饿问题，即低优先级的任务长时间得不到执行。
-- 由于需要对队列中的元素进行排序操作以及保证线程安全（并发控制采用的是可重入锁 `ReentrantLock`），因此会降低性能。
+- 可能会导致 Starvation 问题，即低优先级的 Task 长时间得不到执行。
+- 由于需要对 Queue 中的元素进行排序操作以及保证 Thread-safe（Concurrency 控制采用的是 Reentrant Lock `ReentrantLock`），因此会降低 Performance。
 
-对于 OOM 这个问题的解决比较简单粗暴，就是继承 `PriorityBlockingQueue` 并重写一下 `offer` 方法（入队）的逻辑，当插入的元素数量超过指定值就返回 false。
+对于 OOM 这个问题的解决比较简单粗暴，就是 Inheritance `PriorityBlockingQueue` 并 Override 一下 `offer` Method（Enqueue）的逻辑，当插入的元素数量超过指定值就返回 false。
 
-饥饿问题这个可以通过优化设计来解决（比较麻烦），比如等待时间过长的任务会被移除并重新添加到队列中，但是优先级会被提升。
+Starvation 问题这个可以通过优化设计来解决（比较麻烦），比如等待时间过长的 Task 会被移除并重新添加到 Queue 中，但是优先级会被提升。
 
-对于性能方面的影响，是没办法避免的，毕竟需要对任务进行排序操作。并且，对于大部分业务场景来说，这点性能影响是可以接受的。
+对于 Performance 方面的影响，是没办法避免的，毕竟需要对 Task 进行排序操作。并且，对于大部分业务场景来说，这点 Performance 影响是可以接受的。
 
 ## Future
 
@@ -1048,18 +1048,18 @@ CPU 密集型简单理解就是利用 CPU 计算能力的任务比如你在内�
 
 除了下面的面试题之外，还推荐你看看我写的这篇文章： [CompletableFuture 详解](https://javaguide.cn/java/concurrent/completablefuture-intro.html)。
 
-### Future 接口有什么用？
+### Future Interface 有什么用？
 
-`Future` 接口是异步思想的典型运用，主要用在一些需要执行耗时任务的场景，避免程序一直原地等待耗时任务执行完成，执行效率太低。具体来说是这样的：当我们执行某一耗时的任务时，可以将这个耗时任务交给一个子线程去异步执行，同时我们可以干点其他事情，不用傻傻等待耗时任务执行完成。等我们的事情干完后，我们再通过 `Future` 获取到耗时任务的执行结果。这样一来，程序的执行效率就明显提高了。
+`Future` Interface 是 Asynchronous 思想的典型运用，主要用在一些需要执行耗时 Task 的场景，避免程序一直原地等待耗时 Task 执行完成，执行效率太低。具体来说是这样的：当我们执行某一耗时的 Task 时，可以将这个耗时 Task 交给一个 Child Thread 去 Asynchronous 执行，同时我们可以干点其他事情，不用傻傻等待耗时 Task 执行完成。等我们的事情干完后，我们再通过 `Future` 获取到耗时 Task 的执行结果。这样一来，程序的执行效率就明显提高了。
 
-这其实就是多线程中经典的 **Future 模式**，你可以将其看作是一种设计模式，核心思想是异步调用，主要用在多线程领域，并非 Java 语言独有。
+这其实就是 Multithreading 中经典的 **Future 模式**，你可以将其看作是一种 Design Pattern，核心思想是 Asynchronous 调用，主要用在 Multithreading 领域，并非 Java 语言独有。
 
-在 Java 中，`Future` 是一个泛型接口，位于 `java.util.concurrent` 包下。它有 5 个经典抽象方法，主要包括下面 4 类功能；JDK 19 起又增加了 `resultNow()`、`exceptionNow()` 和 `state()` 三个默认查询方法。
+在 Java 中，`Future` 是一个 Generics Interface，位于 `java.util.concurrent` Package 下。它有 5 个经典 Abstract Method，主要包括下面 4 Class 功能；JDK 19 起又增加了 `resultNow()`、`exceptionNow()` 和 `state()` 三个默认查询 Method。
 
-- 取消任务；
-- 判断任务是否被取消;
-- 判断任务是否已经执行完成;
-- 获取任务执行结果。
+- 取消 Task；
+- 判断 Task 是否被取消;
+- 判断 Task 是否已经执行完成;
+- 获取 Task 执行结果。
 
 ```java
 // V 代表了Future执行的任务返回值的类型
@@ -1081,24 +1081,24 @@ public interface Future<V> {
 }
 ```
 
-简单理解就是：我有一个任务，提交给了 `Future` 来处理。任务执行期间我自己可以去做任何想做的事情。并且，在这期间我还可以取消任务以及获取任务的执行状态。一段时间之后，我就可以 `Future` 那里直接取出任务执行结果。
+简单理解就是：我有一个 Task，提交给了 `Future` 来处理。 Task 执行期间我自己可以去做任何想做的事情。并且，在这期间我还可以取消 Task 以及获取 Task 的执行状态。一段时间之后，我就可以 `Future` 那里直接取出 Task 执行结果。
 
 ### Callable 和 Future 有什么关系？
 
 我们可以通过 `FutureTask` 来理解 `Callable` 和 `Future` 之间的关系。
 
-`FutureTask` 提供了 `Future` 接口的基本实现，常用来封装 `Callable` 和 `Runnable`，具有取消任务、查看任务是否执行完成以及获取任务执行结果的方法。`ExecutorService.submit()` 方法返回的其实就是 `Future` 的实现类 `FutureTask`。
+`FutureTask` 提供了 `Future` Interface 的基本实现，常用来 Encapsulation `Callable` 和 `Runnable`，具有取消 Task、查看 Task 是否执行完成以及获取 Task 执行结果的 Method。`ExecutorService.submit()` Method 返回的其实就是 `Future` 的 Implementation Class `FutureTask`。
 
 ```java
 <T> Future<T> submit(Callable<T> task);
 Future<?> submit(Runnable task);
 ```
 
-`FutureTask` 不光实现了 `Future` 接口，还实现了 `Runnable` 接口，因此可以作为任务直接被线程执行。
+`FutureTask` 不光实现了 `Future` Interface，还实现了 `Runnable` Interface，因此可以作为 Task 直接被 Thread 执行。
 
 ![](https://oss.javaguide.cn/github/javaguide/java/concurrent/completablefuture-class-diagram.jpg)
 
-`FutureTask` 有两个构造函数，可传入 `Callable` 或者 `Runnable` 对象。实际上，传入 `Runnable` 对象也会在方法内部转换为 `Callable` 对象。
+`FutureTask` 有两个 Constructor，可传入 `Callable` 或者 `Runnable` Object。实际上，传入 `Runnable` Object 也会在 Method 内部转换为 `Callable` Object。
 
 ```java
 public FutureTask(Callable<V> callable) {
@@ -1114,38 +1114,38 @@ public FutureTask(Runnable runnable, V result) {
 }
 ```
 
-`FutureTask` 相当于对 `Callable` 进行了封装，管理着任务执行的情况，存储了 `Callable` 的 `call` 方法的任务执行结果。
+`FutureTask` 相当于对 `Callable` 进行了 Encapsulation，管理着 Task 执行的情况，存储了 `Callable` 的 `call` Method 的 Task 执行结果。
 
 关于更多 `Future` 的源码细节，可以肝这篇万字解析，写的很清楚：[Java 是如何实现 Future 模式的？万字详解！](https://juejin.cn/post/6844904199625375757)。
 
-### CompletableFuture 类有什么用？
+### CompletableFuture Class 有什么用？
 
-`Future` 在实际使用过程中存在一些局限性，比如不支持异步任务的编排组合、获取计算结果的 `get()` 方法为阻塞调用。
+`Future` 在实际使用过程中存在一些局限性，比如不支持 Asynchronous Task 的编排组合、获取计算结果的 `get()` Method 为 Blocking 调用。
 
-Java 8 才被引入 `CompletableFuture` 类可以解决 `Future` 的这些缺陷。`CompletableFuture` 除了提供了更为好用和强大的 `Future` 特性之外，还提供了函数式编程、异步任务编排组合（可以将多个异步任务串联起来，组成一个完整的链式调用）等能力。
+Java 8 才被引入 `CompletableFuture` Class 可以解决 `Future` 的这些缺陷。`CompletableFuture` 除了提供了更为好用和强大的 `Future` 特性之外，还提供了 Functional Programming、Asynchronous Task 编排组合（可以将多个 Asynchronous Task 串联起来，组成一个完整的链式调用）等能力。
 
-下面我们来简单看看 `CompletableFuture` 类的定义。
+下面我们来简单看看 `CompletableFuture` Class 的定义。
 
 ```java
 public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 }
 ```
 
-可以看到，`CompletableFuture` 同时实现了 `Future` 和 `CompletionStage` 接口。
+可以看到，`CompletableFuture` 同时实现了 `Future` 和 `CompletionStage` Interface。
 
 ![](https://oss.javaguide.cn/github/javaguide/java/concurrent/completablefuture-class-diagram.jpg)
 
-`CompletionStage` 接口描述了一个异步计算的阶段。很多计算可以分成多个阶段或步骤，此时可以通过它将所有步骤组合起来，形成异步计算的流水线。
+`CompletionStage` Interface 描述了一个 Asynchronous 计算的阶段。很多计算可以分成多个阶段或步骤，此时可以通过它将所有步骤组合起来，形成 Asynchronous 计算的流水线。
 
-`CompletionStage` 接口中的方法比较多，`CompletableFuture` 的函数式能力就是这个接口赋予的。从这个接口的方法参数你就可以发现其大量使用了 Java8 引入的函数式编程。
+`CompletionStage` Interface 中的 Method 比较多，`CompletableFuture` 的 Function 式能力就是这个 Interface 赋予的。从这个 Interface 的 Method Parameter 你就可以发现其大量使用了 Java8 引入的 Functional Programming。
 
 ![](https://oss.javaguide.cn/javaguide/image-20210902093026059.png)
 
-### ⭐️ 一个任务需要依赖另外两个任务执行完之后再执行，怎么设计？
+### ⭐️ 一个 Task 需要依赖另外两个 Task 执行完之后再执行，怎么设计？
 
-这种任务编排场景非常适合通过 `CompletableFuture` 实现。这里假设要实现 T3 在 T2 和 T1 执行完后执行。
+这种 Task 编排场景非常适合通过 `CompletableFuture` 实现。这里假设要实现 T3 在 T2 和 T1 执行完后执行。
 
-代码如下（这里为了简化代码，用到了 Hutool 的线程工具类 `ThreadUtil` 和日期时间工具类 `DateUtil`）：
+代码如下（这里为了简化代码，用到了 Hutool 的 Thread Utility Class `ThreadUtil` 和日期时间 Utility Class `DateUtil`）：
 
 ```java
 // T1
@@ -1168,31 +1168,31 @@ bothCompleted.thenRunAsync(() -> System.out.println("T3 is executing after T1 an
 ThreadUtil.sleep(3000);
 ```
 
-`T1` 和 `T2` 在前面通过 `runAsync()` 启动，`allOf()` 只组合它们的完成状态：当二者都完成后，再执行 T3。是否并行取决于任务的创建方式和执行器，而不是 `allOf()` 本身。
+`T1` 和 `T2` 在前面通过 `runAsync()` 启动，`allOf()` 只组合它们的完成状态：当二者都完成后，再执行 T3。是否 Parallelism 取决于 Task 的创建方式和执行器，而不是 `allOf()` 本身。
 
-### ⭐️ 使用 CompletableFuture，有一个任务失败，如何处理异常？
+### ⭐️ 使用 CompletableFuture，有一个 Task 失败，如何处理 Exception？
 
-使用 `CompletableFuture` 的时候一定要以正确的方式进行异常处理，避免异常丢失或者出现不可控问题。
+使用 `CompletableFuture` 的时候一定要以正确的方式进行 Exception Handling，避免 Exception 丢失或者出现不可控问题。
 
 下面是一些建议：
 
-- `whenComplete` 会在阶段正常或异常完成时执行回调，适合观察结果和记录异常；它默认保留原阶段的结果或异常。
-- `exceptionally` 只在阶段异常完成时执行，并用回调的返回值恢复为正常结果；如果需要继续传播异常，可以在回调中显式抛出异常。
-- `handle` 无论阶段正常还是异常完成都会执行，并根据结果和异常生成一个新的结果。
-- `CompletableFuture.allOf` 可以等待多个阶段全部完成；只要其中一个阶段异常完成，返回的 `CompletableFuture` 也会异常完成，但仍需分别检查各阶段才能获得每个任务的结果或异常。
+- `whenComplete` 会在阶段正常或 Exception 完成时执行 Callback，适合观察结果和记录 Exception；它默认保留原阶段的结果或 Exception。
+- `exceptionally` 只在阶段 Exception 完成时执行，并用 Callback 的 Return Value 恢复为正常结果；如果需要继续传播 Exception，可以在 Callback 中显式抛出 Exception。
+- `handle` 无论阶段正常还是 Exception 完成都会执行，并根据结果和 Exception 生成一个新的结果。
+- `CompletableFuture.allOf` 可以等待多个阶段全部完成；只要其中一个阶段 Exception 完成，返回的 `CompletableFuture` 也会 Exception 完成，但仍需分别检查各阶段才能获得每个 Task 的结果或 Exception。
 - ……
 
-### ⭐️ 在使用 CompletableFuture 的时候为什么要自定义线程池？
+### ⭐️ 在使用 CompletableFuture 的时候为什么要自定义 Thread Pool？
 
-在 `CompletableFuture` 的默认实现中，没有显式传入 `Executor` 的异步方法通常使用全局共享的 `ForkJoinPool.commonPool()`；子类可以通过重写 `defaultExecutor()` 改变非静态异步方法的默认执行器。这意味着使用默认实现的应用程序和库通常会共享同一个线程池。
+在 `CompletableFuture` 的默认实现中，没有显式传入 `Executor` 的 Asynchronous Method 通常使用全局 Shared 的 `ForkJoinPool.commonPool()`；Subclass 可以通过 Override `defaultExecutor()` 改变非静态 Asynchronous Method 的默认执行器。这意味着使用默认实现的应用程序和库通常会 Shared 同一个 Thread Pool。
 
-虽然 `ForkJoinPool` 效率很高，但当同时提交大量任务时，可能会导致资源竞争和线程饥饿，进而影响系统性能。
+虽然 `ForkJoinPool` 效率很高，但当同时提交大量 Task 时，可能会导致资源竞争和 Thread Starvation，进而影响系统 Performance。
 
-为避免这些问题，建议为 `CompletableFuture` 提供自定义线程池，带来以下优势：
+为避免这些问题，建议为 `CompletableFuture` 提供自定义 Thread Pool，带来以下优势：
 
-- 隔离性：为不同任务分配独立的线程池，避免全局线程池资源争夺。
-- 资源控制：根据任务特性调整线程池大小和队列类型，优化性能表现。
-- 异常处理：通过自定义 `ThreadFactory` 更好地处理线程中的异常情况。
+- 隔离性：为不同 Task 分配独立的 Thread Pool，避免全局 Thread Pool 资源争夺。
+- 资源控制：根据 Task 特性调整 Thread Pool 大小和 Queue Type，优化 Performance 表现。
+- Exception Handling：通过自定义 `ThreadFactory` 更好地处理 Thread 中的异常情况。
 
 ```java
 private ThreadPoolExecutor executor = new ThreadPoolExecutor(10, 10,
@@ -1204,55 +1204,55 @@ CompletableFuture.runAsync(() -> {
 }, executor);
 ```
 
-## AQS
+## AbstractQueuedSynchronizer (AQS)
 
 关于 AQS 源码的详细分析，可以看看这一篇文章：[AQS 详解](https://javaguide.cn/java/concurrent/aqs.html)。
 
 ### AQS 是什么？
 
-AQS（`AbstractQueuedSynchronizer`，抽象队列同步器）是从 JDK1.5 开始提供的 Java 并发核心组件。
+AQS（`AbstractQueuedSynchronizer`，抽象 Queue Synchronizer）是从 JDK1.5 开始提供的 Java Concurrency 核心组件。
 
-AQS 解决了开发者在实现同步器时的复杂性问题。它提供了一个通用框架，用于实现各种同步器，例如 **可重入锁**（`ReentrantLock`）、**信号量**（`Semaphore`）和 **倒计时器**（`CountDownLatch`）。通过封装底层的线程同步机制，AQS 将复杂的线程管理逻辑隐藏起来，使开发者只需专注于具体的同步逻辑。
+AQS 解决了开发者在实现 Synchronizer 时的复杂性问题。它提供了一个通用框架，用于实现各种 Synchronizer，例如 **Reentrant Lock**（`ReentrantLock`）、**信号量**（`Semaphore`）和 **CountDownLatch**（`CountDownLatch`）。通过 Encapsulation 底层的 Thread Synchronization 机制，AQS 将复杂的 Thread 管理逻辑隐藏起来，使开发者只需专注于具体的同步逻辑。
 
-简单来说，AQS 是一个抽象类，为同步器提供了通用的 **执行框架**。它定义了 **资源获取和释放的通用流程**，而具体的资源获取逻辑则由具体同步器通过重写模板方法来实现。 因此，可以将 AQS 看作是同步器的 **基础“底座”**，而同步器则是基于 AQS 实现的 **具体“应用”**。
+简单来说，AQS 是一个 Abstract Class，为 Synchronizer 提供了通用的 **执行框架**。它定义了 **资源获取和释放的通用流程**，而具体的资源获取逻辑则由具体 Synchronizer 通过 Override Template Method 来实现。 因此，可以将 AQS 看作是 Synchronizer 的 **基础“底座”**，而 Synchronizer 则是基于 AQS 实现的 **具体“应用”**。
 
 ### ⭐️ AQS 的原理是什么？
 
-> 说明：下面展示的 `waitStatus`、`Unsafe.compareAndSwapInt()` 等内部结构和源码片段基于 JDK 8。AQS 的内部实现后来持续演进：JDK 11 中仍保留了本文涉及的主要结构，JDK 17 及当前版本的节点字段和入队、等待实现则已有较大变化，但同步状态、等待队列和模板方法这些核心思想仍然适用。
+> 说明：下面展示的 `waitStatus`、`Unsafe.compareAndSwapInt()` 等内部结构和源码片段基于 JDK 8。AQS 的内部实现后来持续演进：JDK 11 中仍保留了本文涉及的主要结构，JDK 17 及当前版本的 Node Field 和 Enqueue、等待实现则已有较大变化，但 Synchronization State、Wait Queue 和 Template Method 这些核心思想仍然适用。
 
-AQS 核心思想是，如果被请求的共享资源空闲，则将当前请求资源的线程设置为有效的工作线程，并且将共享资源设置为锁定状态。如果被请求的共享资源被占用，那么就需要一套线程阻塞等待以及被唤醒时锁分配的机制，这个机制 AQS 是基于 **CLH 锁**（Craig, Landin, and Hagersten locks） 进一步优化实现的。
+AQS 核心思想是，如果被请求的 Shared Resource 空闲，则将当前请求资源的 Thread 设置为有效的 Worker Thread，并且将 Shared Resource 设置为 Lock 状态。如果被请求的 Shared Resource 被占用，那么就需要一套 Thread Blocking 等待以及被唤醒时 Lock 分配的机制，这个机制 AQS 是基于 **CLH Lock**（Craig, Landin, and Hagersten locks） 进一步优化实现的。
 
-**CLH 锁** 对自旋锁进行了改进，是基于单链表的自旋锁。在多线程场景下，会将请求获取锁的线程组织成一个单向队列，每个等待的线程会通过自旋访问前一个线程节点的状态，前一个节点释放锁之后，当前节点才可以获取锁。**CLH 锁** 的队列结构如下图所示。
+**CLH Lock** 对 Spin Lock 进行了改进，是基于单 Linked List 的 Spin Lock。在 Multithreading 场景下，会将请求 Acquire Lock 的 Thread Group 织成一个单向 Queue，每个等待的 Thread 会通过 Spin 访问前一个 Thread Node 的状态，前一个 Node Release Lock 之后，当前 Node 才可以 Acquire Lock。**CLH Lock** 的 Queue 结构如下图所示。
 
-![CLH 锁的队列结构](https://oss.javaguide.cn/github/javaguide/open-source-project/clh-lock-queue-structure.png)
+![CLH Lock 的 Queue 结构](https://oss.javaguide.cn/github/javaguide/open-source-project/clh-lock-queue-structure.png)
 
-AQS 中使用的 **等待队列** 是 CLH 锁队列的变体（接下来简称为 CLH 变体队列）。
+AQS 中使用的 **Wait Queue** 是 CLH Lock Queue 的变体（接下来简称为 CLH Variant Queue）。
 
-AQS 的 CLH 变体队列是一个双向队列，会暂时获取不到锁的线程将被加入到该队列中，CLH 变体队列和原本的 CLH 锁队列的区别主要有两点：
+AQS 的 CLH Variant Queue 是一个双向 Queue，会暂时获取不到 Lock 的 Thread 将被加入到该 Queue 中，CLH Variant Queue 和原本的 CLH Lock Queue 的区别主要有两点：
 
-- 由 **自旋** 优化为 **自旋 + 阻塞**：自旋操作的性能很高，但大量的自旋操作比较占用 CPU 资源，因此在 CLH 变体队列中会先通过自旋尝试获取锁，如果失败再进行阻塞等待。
-- 由 **单向队列** 优化为 **双向队列**：在 CLH 变体队列中，会对等待的线程进行阻塞操作，当队列前边的线程释放锁之后，需要对后边的线程进行唤醒，因此增加了 `next` 指针，成为了双向队列。
+- 由 **Spin** 优化为 **Spin + Blocking**：Spin 操作的 Performance 很高，但大量的 Spin 操作比较占用 CPU 资源，因此在 CLH Variant Queue 中会先通过 Spin Try Acquire，如果失败再进行 Blocking 等待。
+- 由 **单向 Queue** 优化为 **双向 Queue**：在 CLH Variant Queue 中，会对等待的 Thread 进行 Blocking Operation，当 Queue 前边的 Thread Release Lock 之后，需要对后边的 Thread 进行唤醒，因此增加了 `next` Pointer，成为了双向 Queue。
 
-AQS 将每条请求共享资源的线程封装成一个 CLH 变体队列的一个结点（Node）来实现锁的分配。在 CLH 变体队列中，一个节点表示一个线程，它保存着线程的引用（thread）、 当前节点在队列中的状态（waitStatus）、前驱节点（prev）、后继节点（next）。
+AQS 将每条请求 Shared Resource 的 Thread Encapsulate 成一个 CLH Variant Queue 的一个结点（Node）来实现 Lock 的分配。在 CLH Variant Queue 中，一个 Node 表示一个 Thread，它保存着 Thread 的 Reference（thread）、 当前 Node 在 Queue 中的状态（waitStatus）、Predecessor（prev）、Successor（next）。
 
-AQS 中的 CLH 变体队列结构如下图所示：
+AQS 中的 CLH Variant Queue 结构如下图所示：
 
-![CLH 变体队列结构](https://oss.javaguide.cn/github/javaguide/java/concurrent/clh-queue-structure-bianti.png)
+![CLH Variant Queue 结构](https://oss.javaguide.cn/github/javaguide/java/concurrent/clh-queue-structure-bianti.png)
 
 AQS(`AbstractQueuedSynchronizer`)的核心原理图：
 
-![CLH 变体队列](https://oss.javaguide.cn/github/javaguide/java/concurrent/clh-queue-state.png)
+![CLH Variant Queue](https://oss.javaguide.cn/github/javaguide/java/concurrent/clh-queue-state.png)
 
-AQS 使用 **int 成员变量 `state` 表示同步状态**，通过内置的 **线程等待队列** 来完成获取资源线程的排队工作。
+AQS 使用 **int Instance Variable `state` 表示 Synchronization State**，通过内置的 **Thread Wait Queue** 来完成获取资源 Thread 的排队工作。
 
-`state` 变量由 `volatile` 修饰，用于展示当前临界资源的获锁情况。
+`state` Variable 由 `volatile` 修饰，用于展示当前临界资源的获 Lock 情况。
 
 ```java
 // 共享变量，使用volatile修饰保证线程可见性
 private volatile int state;
 ```
 
-另外，状态信息 `state` 可以通过 `protected` 类型的 `getState()`、`setState()` 和 `compareAndSetState()` 进行操作。并且，这几个方法都是 `final` 修饰的，在子类中无法被重写。
+另外，状态信息 `state` 可以通过 `protected` Type 的 `getState()`、`setState()` 和 `compareAndSetState()` 进行操作。并且，这几个 Method 都是 `final` 修饰的，在 Subclass 中无法被 Override。
 
 ```java
 //返回同步状态的当前值
@@ -1269,15 +1269,15 @@ protected final boolean compareAndSetState(int expect, int update) {
 }
 ```
 
-以 `ReentrantLock` 为例，`state` 初始值为 0，表示未锁定状态。A 线程 `lock()` 时，会调用 `tryAcquire()` 独占该锁并将 `state+1`。此后，其他线程再 `tryAcquire()` 时就会失败，直到 A 线程 `unlock()` 到 `state=`0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A 线程自己是可以重复获取此锁的（`state` 会累加），这就是可重入的概念。但要注意，获取多少次就要释放多少次，这样才能保证 state 是能回到零态的。
+以 `ReentrantLock` 为例，`state` 初始值为 0，表示未 Lock 状态。A Thread `lock()` 时，会调用 `tryAcquire()` Exclusive 该 Lock 并将 `state+1`。此后，其他 Thread 再 `tryAcquire()` 时就会失败，直到 A Thread `unlock()` 到 `state=`0（即 Release Lock）为止，其它 Thread 才有机会获取该 Lock。当然，Release Lock 之前，A Thread 自己是可以重复获取此 Lock 的（`state` 会累加），这就是 Reentrant 的概念。但要注意，获取多少次就要释放多少次，这样才能保证 state 是能回到零态的。
 
-再以 `CountDownLatch` 为例，`state` 初始化为 N，表示需要等待 N 次 `countDown()` 调用。N 表示事件数或计数次数，不要求与线程数一致；同一个线程可以调用多次，也可以由多个线程分别调用。当 `state` 变为 0 时，等待队列中因调用 `await()` 而阻塞的线程会被唤醒并继续执行。
+再以 `CountDownLatch` 为例，`state` Initialization 为 N，表示需要等待 N 次 `countDown()` 调用。N 表示事件数或计数次数，不要求与 Thread Count 一致；同一个 Thread 可以调用多次，也可以由多个 Thread 分别调用。当 `state` 变为 0 时，Wait Queue 中因调用 `await()` 而 Blocking 的 Thread 会被唤醒并继续执行。
 
 ### Semaphore 有什么用？
 
-`synchronized` 和 `ReentrantLock` 都是一次只允许一个线程访问某个资源，而 `Semaphore`（信号量）可以用来控制同时访问特定资源的线程数量。
+`synchronized` 和 `ReentrantLock` 都是一次只允许一个 Thread 访问某个资源，而 `Semaphore`（信号量）可以用来控制同时访问特定资源的 Thread Count。
 
-Semaphore 的使用简单，我们这里假设有 N(N>5) 个线程来获取 `Semaphore` 中的共享资源，下面的代码表示同一时刻 N 个线程中只有 5 个线程能获取到共享资源，其他线程都会阻塞，只有获取到共享资源的线程才能执行。等到有线程释放了共享资源，其他阻塞的线程才能获取到。
+Semaphore 的使用简单，我们这里假设有 N(N>5) 个 Thread 来获取 `Semaphore` 中的 Shared Resource，下面的代码表示同一时刻 N 个 Thread 中只有 5 个 Thread 能获取到 Shared Resource，其他 Thread 都会 Blocking，只有获取到 Shared Resource 的 Thread 才能执行。等到有 Thread 释放了 Shared Resource，其他 Blocking 的 Thread 才能获取到。
 
 ```java
 // 初始共享资源数量
@@ -1288,14 +1288,14 @@ semaphore.acquire();
 semaphore.release();
 ```
 
-当许可证数量为 1 时，`Semaphore` 可以把并发访问数限制为 1，但它不同于互斥锁：信号量没有所有权约束，获取许可证的线程和释放许可证的线程可以不是同一个线程。
+当 Permit 数量为 1 时，`Semaphore` 可以把 Concurrency 访问数限制为 1，但它不同于 Mutex：信号量没有所有权约束，获取 Permit 的 Thread 和释放 Permit 的 Thread 可以不是同一个 Thread。
 
 `Semaphore` 有两种模式：。
 
-- **公平模式：** 存在竞争时，阻塞式 `acquire` 方法会在内部排队点按 FIFO 选择线程；无参的 `tryAcquire()` 不遵守公平设置，仍可能插队成功；
-- **非公平模式：** 抢占式的。
+- **Fair 模式：** 存在竞争时，Blocking 式 `acquire` Method 会在内部排队点按 FIFO 选择 Thread；无参的 `tryAcquire()` 不遵守 Fair 设置，仍可能插队成功；
+- **Nonfair 模式：** 抢占式的。
 
-`Semaphore` 对应的两个构造方法如下：
+`Semaphore` 对应的两个 Constructor 如下：
 
 ```java
 public Semaphore(int permits) {
@@ -1307,15 +1307,15 @@ public Semaphore(int permits, boolean fair) {
 }
 ```
 
-**这两个构造方法，都必须提供许可的数量，第二个构造方法可以指定是公平模式还是非公平模式，默认非公平模式。**
+**这两个 Constructor，都必须提供许可的数量，第二个 Constructor 可以指定是 Fair 模式还是 Nonfair 模式，默认 Nonfair 模式。**
 
-`Semaphore` 通常用于那些资源有明确访问数量限制的场景比如限流（仅限于单机模式，实际项目中推荐使用 Redis +Lua 来做限流）。
+`Semaphore` 通常用于那些资源有明确访问数量限制的场景比如 Rate Limiting（仅限于单机模式，实际项目中推荐使用 Redis +Lua 来做 Rate Limiting）。
 
 ### Semaphore 的原理是什么？
 
-`Semaphore` 是共享锁的一种实现，它默认构造 AQS 的 `state` 值为 `permits`，你可以将 `permits` 的值理解为许可证的数量，只有拿到许可证的线程才能执行。
+`Semaphore` 是 Shared Lock 的一种实现，它默认构造 AQS 的 `state` 值为 `permits`，你可以将 `permits` 的值理解为 Permit 的数量，只有拿到 Permit 的 Thread 才能执行。
 
-调用 `semaphore.acquire()`，线程尝试获取许可证，如果 `state >= 0` 的话，则表示可以获取成功。如果获取成功的话，使用 CAS 操作去修改 `state` 的值 `state=state-1`。如果 `state<0` 的话，则表示许可证数量不足。此时会创建一个 Node 节点加入阻塞队列，挂起当前线程。
+调用 `semaphore.acquire()`，Thread 尝试获取 Permit，如果 `state >= 0` 的话，则表示可以获取成功。如果获取成功的话，使用 Compare-And-Swap (CAS) 操作去修改 `state` 的值 `state=state-1`。如果 `state<0` 的话，则表示 Permit 数量不足。此时会创建一个 Node Node 加入 Blocking Queue，挂起 Current Thread。
 
 ```java
 /**
@@ -1337,7 +1337,7 @@ public final void acquireSharedInterruptibly(int arg)
 }
 ```
 
-调用 `semaphore.release();`，线程尝试释放许可证，并使用 CAS 操作去修改 `state` 的值 `state=state+1`。释放许可证成功之后，同时会唤醒同步队列中的一个线程。被唤醒的线程会重新尝试去修改 `state` 的值 `state=state-1`，如果 `state>=0` 则获取令牌成功，否则重新进入阻塞队列，挂起线程。
+调用 `semaphore.release();`，Thread 尝试释放 Permit，并使用 CAS 操作去修改 `state` 的值 `state=state+1`。释放 Permit 成功之后，同时会唤醒 Sync Queue 中的一个 Thread。被唤醒的 Thread 会重新尝试去修改 `state` 的值 `state=state-1`，如果 `state>=0` 则获取令牌成功，否则重新进入 Blocking Queue，挂起 Thread。
 
 ```java
 // 释放一个许可证
@@ -1359,21 +1359,21 @@ public final boolean releaseShared(int arg) {
 
 ### CountDownLatch 有什么用？
 
-`CountDownLatch` 允许任意数量的线程在 `await()` 处等待，直至发生 `count` 次 `countDown()` 调用。这个计数表示事件或操作次数，不一定对应 `count` 个不同线程。
+`CountDownLatch` 允许任意数量的 Thread 在 `await()` 处等待，直至发生 `count` 次 `countDown()` 调用。这个计数表示事件或操作次数，不一定对应 `count` 个不同 Thread。
 
-`CountDownLatch` 是一次性的，计数器的值只能在构造方法中初始化一次，之后没有任何机制再次对其设置值，当 `CountDownLatch` 使用完毕后，它不能再次被使用。
+`CountDownLatch` 是一次性的，Counter 的值只能在 Constructor 中 Initialization 一次，之后没有任何机制再次对其设置值，当 `CountDownLatch` 使用完毕后，它不能再次被使用。
 
 ### CountDownLatch 的原理是什么？
 
-`CountDownLatch` 是共享模式同步器的一种实现，它构造时将 AQS 的 `state` 设置为 `count`。每次调用 `countDown()` 都会通过 `tryReleaseShared` 将 `state` 减 1，直至为 0。调用 `await()` 时，如果 `state` 不为 0，当前线程就会等待：计数归零时，无参 `await()` 正常返回，带超时版本返回 `true`；等待期间被中断时会抛出 `InterruptedException`；带超时版本到期时返回 `false`。调用 `countDown()` 的次数与线程数量没有必然关系。
+`CountDownLatch` 是 Shared Mode Synchronizer 的一种实现，它构造时将 AQS 的 `state` 设置为 `count`。每次调用 `countDown()` 都会通过 `tryReleaseShared` 将 `state` 减 1，直至为 0。调用 `await()` 时，如果 `state` 不为 0，Current Thread 就会等待：计数归零时，无参 `await()` 正常返回，带 Timeout 版本返回 `true`；等待期间被 Interrupt 时会抛出 `InterruptedException`；带 Timeout 版本到期时返回 `false`。调用 `countDown()` 的次数与 Thread Count 没有必然关系。
 
 ### 用过 CountDownLatch 么？什么场景下用的？
 
-`CountDownLatch` 的作用就是允许任意数量的线程在一个地方等待，直至发生 `count` 次 `countDown()` 调用。之前在项目中，有一个使用多线程读取多个文件处理的场景，我用到了 `CountDownLatch`。具体场景是下面这样的：
+`CountDownLatch` 的作用就是允许任意数量的 Thread 在一个地方等待，直至发生 `count` 次 `countDown()` 调用。之前在项目中，有一个使用 Multithreading 读取多个文件处理的场景，我用到了 `CountDownLatch`。具体场景是下面这样的：
 
-我们要读取处理 6 个文件，这 6 个任务都是没有执行顺序依赖的任务，但是我们需要返回给用户的时候将这几个文件的处理的结果进行统计整理。
+我们要读取处理 6 个文件，这 6 个 Task 都是没有执行顺序依赖的 Task，但是我们需要返回给用户的时候将这几个文件的处理的结果进行统计整理。
 
-为此我们定义了一个线程池和 count 为 6 的 `CountDownLatch` 对象。使用线程池处理读取任务，每一个线程处理完之后就将 count-1，调用 `CountDownLatch` 对象的 `countDown()` 方法，直到所有文件读取完之后，才会接着执行后面的逻辑。
+为此我们定义了一个 Thread Pool 和 count 为 6 的 `CountDownLatch` Object。使用 Thread Pool 处理读取 Task，每一个 Thread 处理完之后就将 count-1，调用 `CountDownLatch` Object 的 `countDown()` Method，直到所有文件读取完之后，才会接着执行后面的逻辑。
 
 伪代码是下面这样的：
 
@@ -1410,7 +1410,7 @@ public class CountDownLatchExample1 {
 
 **有没有可以改进的地方呢？**
 
-可以使用 `CompletableFuture` 类来改进！Java8 的 `CompletableFuture` 提供了很多对多线程友好的方法，使用它可以很方便地为我们编写多线程程序，什么异步、串行、并行或者等待所有线程执行完任务什么的都非常方便。
+可以使用 `CompletableFuture` Class 来改进！Java8 的 `CompletableFuture` 提供了很多对 Multithreading 友好的 Method，使用它可以很方便地为我们编写 Multithreading 程序，什么 Asynchronous、Serial、Parallelism 或者等待所有 Thread 执行完 Task 什么的都非常方便。
 
 ```java
 CompletableFuture<Void> task1 =
@@ -1433,7 +1433,7 @@ try {
 System.out.println("all done. ");
 ```
 
-上面的代码还可以继续优化，当任务过多的时候，把每一个 task 都列出来不太现实，可以考虑通过循环来添加任务。
+上面的代码还可以继续优化，当 Task 过多的时候，把每一个 task 都列出来不太现实，可以考虑通过 Loop 来添加 Task。
 
 ```java
 //文件夹位置
@@ -1450,15 +1450,15 @@ CompletableFuture<Void> allFutures = CompletableFuture.allOf(
 
 ### CyclicBarrier 有什么用？
 
-`CyclicBarrier` 和 `CountDownLatch` 非常类似，它也可以实现线程间的技术等待，但是它的功能比 `CountDownLatch` 更加复杂和强大。主要应用场景和 `CountDownLatch` 类似。
+`CyclicBarrier` 和 `CountDownLatch` 非常类似，它也可以实现 Thread 间的技术等待，但是它的功能比 `CountDownLatch` 更加复杂和强大。主要应用场景和 `CountDownLatch` 类似。
 
-> `CountDownLatch` 的实现是基于 AQS 的，而 `CyclicBarrier` 是基于 `ReentrantLock`(`ReentrantLock` 也属于 AQS 同步器)和 `Condition` 的。
+> `CountDownLatch` 的实现是基于 AQS 的，而 `CyclicBarrier` 是基于 `ReentrantLock`(`ReentrantLock` 也属于 AQS Synchronizer)和 `Condition` 的。
 
-`CyclicBarrier` 的字面意思是可循环使用（Cyclic）的屏障（Barrier）。它要做的事情是：让一组线程到达一个屏障（也可以叫同步点）时被阻塞，直到最后一个线程到达屏障时，屏障才会开门，所有被屏障拦截的线程才会继续干活。
+`CyclicBarrier` 的字面意思是可 Loop 使用（Cyclic）的屏障（Barrier）。它要做的事情是：让一组 Thread 到达一个屏障（也可以叫同步点）时被 Blocking，直到最后一个 Thread 到达屏障时，屏障才会开门，所有被屏障拦截的 Thread 才会继续干活。
 
 ### CyclicBarrier 的原理是什么？
 
-`CyclicBarrier` 内部通过一个 `count` 变量作为计数器，`count` 的初始值为 `parties` 属性的初始化值，每当一个线程到了栅栏这里了，那么就将计数器减 1。如果 count 值为 0 了，表示这是这一代最后一个线程到达栅栏，就尝试执行我们构造方法中输入的任务。
+`CyclicBarrier` 内部通过一个 `count` Variable 作为 Counter，`count` 的初始值为 `parties` 属性的 Initialization 值，每当一个 Thread 到了 Barrier 这里了，那么就将 Counter 减 1。如果 count 值为 0 了，表示这是这一代最后一个 Thread 到达 Barrier，就尝试执行我们 Constructor 中输入的 Task。
 
 ```java
 //每次拦截的线程数
@@ -1469,7 +1469,7 @@ private int count;
 
 下面我们结合源码来简单看看。
 
-1、`CyclicBarrier` 默认的构造方法是 `CyclicBarrier(int parties)`，其参数表示屏障拦截的线程数量，每个线程调用 `await()` 方法告诉 `CyclicBarrier` 我已经到达了屏障，然后当前线程被阻塞。
+1、`CyclicBarrier` 默认的 Constructor 是 `CyclicBarrier(int parties)`，其 Parameter 表示屏障拦截的 Thread Count，每个 Thread 调用 `await()` Method 告诉 `CyclicBarrier` 我已经到达了屏障，然后 Current Thread 被 Blocking。
 
 ```java
 public CyclicBarrier(int parties) {
@@ -1484,9 +1484,9 @@ public CyclicBarrier(int parties, Runnable barrierAction) {
 }
 ```
 
-其中，`parties` 就代表了有拦截的线程的数量，当拦截的线程数量达到这个值的时候就打开栅栏，让所有线程通过。
+其中，`parties` 就代表了有拦截的 Thread 的数量，当拦截的 Thread Count 达到这个值的时候就打开 Barrier，让所有 Thread 通过。
 
-2、当调用 `CyclicBarrier` 对象调用 `await()` 方法时，实际上调用的是 `dowait(false, 0L)` 方法。 `await()` 方法就像树立起一个栅栏的行为一样，将线程挡住了，当拦住的线程数量达到 `parties` 的值时，栅栏才会打开，线程才得以通过执行。
+2、当调用 `CyclicBarrier` Object 调用 `await()` Method 时，实际上调用的是 `dowait(false, 0L)` Method。 `await()` Method 就像树立起一个 Barrier 的行为一样，将 Thread 挡住了，当拦住的 Thread Count 达到 `parties` 的值时，Barrier 才会打开，Thread 才得以通过执行。
 
 ```java
 public int await() throws InterruptedException, BrokenBarrierException {
@@ -1498,7 +1498,7 @@ public int await() throws InterruptedException, BrokenBarrierException {
 }
 ```
 
-`dowait(false, 0L)` 方法源码分析如下：
+`dowait(false, 0L)` Method 源码分析如下：
 
 ```java
     // 当线程数量或者请求数量达到 count 时 await 之后的方法才会被执行。上面的示例中 count 的值就为 5。
@@ -1580,25 +1580,25 @@ public int await() throws InterruptedException, BrokenBarrierException {
     }
 ```
 
-## 虚拟线程
+## Virtual Thread
 
-虚拟线程在 Java 21 正式发布，这是一项重量级的更新。虽然目前面试中问的不多，但还是建议大家去简单了解一下。我写了一篇文章来总结虚拟线程常见的问题：[虚拟线程常见问题总结](https://javaguide.cn/java/concurrent/virtual-thread.html)，包含下面这些问题：
+Virtual Thread 在 Java 21 正式发布，这是一项重量级的更新。虽然目前面试中问的不多，但还是建议大家去简单了解一下。我写了一篇文章来总结 Virtual Thread 常见的问题：[Virtual Thread 常见问题总结](https://javaguide.cn/java/concurrent/virtual-thread.html)，包含下面这些问题：
 
-1. 什么是虚拟线程？
-2. 虚拟线程和平台线程有什么关系？
-3. 虚拟线程有什么优点和缺点？
-4. 如何创建虚拟线程？
-5. 虚拟线程的底层原理是什么？
+1. 什么是 Virtual Thread？
+2. Virtual Thread 和 Platform Thread 有什么关系？
+3. Virtual Thread 有什么优点和缺点？
+4. 如何创建 Virtual Thread？
+5. Virtual Thread 的底层原理是什么？
 
 ## 参考
 
-- 《深入理解 Java 虚拟机》
-- 《实战 Java 高并发程序设计》
-- Java 线程池的实现原理及其在业务中的最佳实践：阿里云开发者：<https://mp.weixin.qq.com/s/icrrxEsbABBvEU0Gym7D5Q>
-- 带你了解下 SynchronousQueue（并发队列专题）：<https://juejin.cn/post/7031196740128768037>
-- 阻塞队列 — DelayedWorkQueue 源码分析：<https://zhuanlan.zhihu.com/p/310621485>
-- Java 多线程（三）——FutureTask/CompletableFuture：<https://www.cnblogs.com/iwehdio/p/14285282.html>
-- Java 并发之 AQS 详解：<https://www.cnblogs.com/waterystone/p/4920797.html>
-- Java 并发包基石-AQS 详解：<https://www.cnblogs.com/chengxiao/archive/2017/07/24/7141160.html>
+- 《深入理解 Java Virtual Machine》
+- 《实战 Java High Concurrency 程序设计》
+- Java Thread Pool 的实现原理及其在业务中的最佳实践：阿里云开发者：<https://mp.weixin.qq.com/s/icrrxEsbABBvEU0Gym7D5Q>
+- 带你了解下 SynchronousQueue（Concurrency Queue 专题）：<https://juejin.cn/post/7031196740128768037>
+- Blocking Queue — DelayedWorkQueue 源码分析：<https://zhuanlan.zhihu.com/p/310621485>
+- Java Multithreading（三）——FutureTask/CompletableFuture：<https://www.cnblogs.com/iwehdio/p/14285282.html>
+- Java Concurrency 之 AQS 详解：<https://www.cnblogs.com/waterystone/p/4920797.html>
+- Java Concurrency 包基石-AQS 详解：<https://www.cnblogs.com/chengxiao/archive/2017/07/24/7141160.html>
 
 <!-- @include: @article-footer.snippet.md -->

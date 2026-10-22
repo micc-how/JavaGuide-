@@ -1,72 +1,72 @@
 ---
-title: Atomic 原子类总结
-description: Java原子类详解：全面总结JUC包Atomic原子类体系、AtomicInteger/AtomicLong/AtomicReference等常用类、基于CAS的线程安全实现、使用场景与性能优势。
+title: Atomic Class 总结
+description: Java Atomic Class 详解：全面总结JUC包Atomic Atomic Class 体系、AtomicInteger/AtomicLong/AtomicReference等常用 Class、基于Compare-And-Swap (CAS)的 Thread-safe 实现、使用场景与 Performance 优势。
 category: Java
 tag:
   - Java并发
 head:
   - - meta
     - name: keywords
-      content: Atomic原子类,AtomicInteger,AtomicLong,AtomicReference,CAS原子操作,JUC并发包,原子类使用
+      content: Atomic Class,AtomicInteger,AtomicLong,AtomicReference,CAS Atomic Operation,JUC Concurrency 包,Atomic Class 使用
 ---
 
-## Atomic 原子类介绍
+## Atomic Class 介绍
 
-`Atomic` 翻译成中文是“原子”的意思。在化学上，原子是构成物质的最小单位，在化学反应中不可分割。在编程中，`Atomic` 指的是一个操作具有原子性，即该操作不可分割、不可中断。即使在多个线程同时执行时，该操作要么全部执行完成，要么不执行，不会被其他线程看到部分完成的状态。
+`Atomic` 翻译成中文是“Atomic”的意思。在化学上，Atomic 是构成物质的最小单位，在化学反应中不可分割。在编程中，`Atomic` 指的是一个操作具有 Atomicity，即该操作不可分割、Uninterruptible。即使在多个 Thread 同时执行时，该操作要么全部执行完成，要么不执行，不会被其他 Thread 看到部分完成的状态。
 
-原子类简单来说就是具有原子性操作特征的类。
+Atomic Class 简单来说就是具有 Atomicity 操作特征的 Class。
 
-`java.util.concurrent.atomic` 包中的 `Atomic` 原子类提供了一种线程安全的方式来操作单个变量。
+`java.util.concurrent.atomic` Package 中的 `Atomic` Atomic Class 提供了一种 Thread-safe 的方式来操作单个 Variable。
 
-`Atomic` 类依赖于 CAS（Compare-And-Swap，比较并交换）乐观锁来保证其方法的原子性，而不需要使用传统的锁机制（如 `synchronized` 块或 `ReentrantLock`）。
+`Atomic` Class 依赖于 CAS（Compare-And-Swap，CAS）Optimistic Lock 来保证其 Method 的 Atomicity，而不需要使用传统的 Locking Mechanism（如 `synchronized` 块或 `ReentrantLock`）。
 
-这篇文章我们只介绍 Atomic 原子类的概念，具体实现原理可以阅读笔者写的这篇文章：[CAS 详解](./cas.md)。
+这篇文章我们只介绍 Atomic Class 的概念，具体实现原理可以阅读笔者写的这篇文章：[CAS 详解](./cas.md)。
 
-![JUC原子类概览](https://oss.javaguide.cn/github/javaguide/java/JUC%E5%8E%9F%E5%AD%90%E7%B1%BB%E6%A6%82%E8%A7%88.png)
+![JUC Atomic Class 概览](https://oss.javaguide.cn/github/javaguide/java/JUC%E5%8E%9F%E5%AD%90%E7%B1%BB%E6%A6%82%E8%A7%88.png)
 
-根据操作的数据类型，可以将 JUC 包中的原子类分为 4 类：
+根据操作的 Data Type，可以将 JUC Package 中的 Atomic Class 分为 4 Class：
 
-**1、基本类型**
+**1、Primitive Type**
 
-使用原子的方式更新基本类型
+使用 Atomic 的方式更新 Primitive Type
 
-- `AtomicInteger`：整型原子类
-- `AtomicLong`：长整型原子类
-- `AtomicBoolean`：布尔型原子类
+- `AtomicInteger`：Integer Atomic Class
+- `AtomicLong`：长 Integer Atomic Class
+- `AtomicBoolean`：Boolean 型 Atomic Class
 
-**2、数组类型**
+**2、Array Type**
 
-使用原子的方式更新数组里的某个元素
+使用 Atomic 的方式更新 Array 里的某个元素
 
-- `AtomicIntegerArray`：整型数组原子类
-- `AtomicLongArray`：长整型数组原子类
-- `AtomicReferenceArray`：引用类型数组原子类
+- `AtomicIntegerArray`：Integer Array Atomic Class
+- `AtomicLongArray`：长 Integer Array Atomic Class
+- `AtomicReferenceArray`：Reference Type Array Atomic Class
 
-**3、引用类型**
+**3、Reference Type**
 
-- `AtomicReference`：引用类型原子类
-- `AtomicMarkableReference`：原子更新带有标记的引用类型。该类将 boolean 标记与引用关联起来，可以检测由业务约定的两种状态之间的变化，但一个比特的标记无法记录任意次数的版本变化。
-- `AtomicStampedReference`：原子更新带有版本号的引用类型。该类将整数值与引用关联起来，可用于解决原子的更新数据和数据的版本号，可以解决使用 CAS 进行原子更新时可能出现的 ABA 问题。
+- `AtomicReference`：Reference Type Atomic Class
+- `AtomicMarkableReference`：Atomic Update 带有标记的 Reference Type。该 Class 将 boolean 标记与 Reference 关联起来，可以检测由业务约定的两种状态之间的变化，但一个比特的标记无法记录任意次数的版本变化。
+- `AtomicStampedReference`：Atomic Update 带有 Version 的 Reference Type。该 Class 将整数值与 Reference 关联起来，可用于解决 Atomic 的更新数据和数据的 Version，可以解决使用 CAS 进行 Atomic Update 时可能出现的 ABA 问题。
 
-与之相比，`AtomicStampedReference` 使用整数版本号，更适合检测引用在两次读取之间是否经历过多次变化。
+与之相比，`AtomicStampedReference` 使用整数 Version，更适合检测 Reference 在两次读取之间是否经历过多次变化。
 
-**4、对象的属性修改类型**
+**4、Object 的属性修改 Type**
 
-- `AtomicIntegerFieldUpdater`:原子更新整型字段的更新器
-- `AtomicLongFieldUpdater`：原子更新长整型字段的更新器
-- `AtomicReferenceFieldUpdater`：原子更新引用类型里的字段
+- `AtomicIntegerFieldUpdater`:Atomic Update Integer Field 的更新器
+- `AtomicLongFieldUpdater`：Atomic Update 长 Integer Field 的更新器
+- `AtomicReferenceFieldUpdater`：Atomic Update Reference Type 里的 Field
 
-## 基本类型原子类
+## Primitive Type Atomic Class
 
-使用原子的方式更新基本类型
+使用 Atomic 的方式更新 Primitive Type
 
-- `AtomicInteger`：整型原子类
-- `AtomicLong`：长整型原子类
-- `AtomicBoolean`：布尔型原子类
+- `AtomicInteger`：Integer Atomic Class
+- `AtomicLong`：长 Integer Atomic Class
+- `AtomicBoolean`：Boolean 型 Atomic Class
 
-上面三个类提供的方法几乎相同，所以我们这里以 `AtomicInteger` 为例子来介绍。
+上面三个 Class 提供的 Method 几乎相同，所以我们这里以 `AtomicInteger` 为例子来介绍。
 
-**`AtomicInteger` 类常用方法**：
+**`AtomicInteger` Class 常用 Method**：
 
 ```java
 public final int get() //获取当前的值
@@ -78,7 +78,7 @@ boolean compareAndSet(int expect, int update) //如果输入的数值等于预�
 public final void lazySet(int newValue)//最终设置为newValue, lazySet 提供了一种比 set 方法更弱的语义，可能导致其他线程在之后的一小段时间内还是可以读到旧的值，但可能更高效。
 ```
 
-**`AtomicInteger` 类使用示例** :
+**`AtomicInteger` Class 使用示例** :
 
 ```java
 // 初始化 AtomicInteger 对象，初始值为 0
@@ -120,17 +120,17 @@ Current value: 10
 After lazySet, atomicInt: 15
 ```
 
-## 数组类型原子类
+## Array Type Atomic Class
 
-使用原子的方式更新数组里的某个元素
+使用 Atomic 的方式更新 Array 里的某个元素
 
-- `AtomicIntegerArray`：整形数组原子类
-- `AtomicLongArray`：长整形数组原子类
-- `AtomicReferenceArray`：引用类型数组原子类
+- `AtomicIntegerArray`：整形 Array Atomic Class
+- `AtomicLongArray`：长整形 Array Atomic Class
+- `AtomicReferenceArray`：Reference Type Array Atomic Class
 
-上面三个类提供的方法几乎相同，所以我们这里以 `AtomicIntegerArray` 为例子来介绍。
+上面三个 Class 提供的 Method 几乎相同，所以我们这里以 `AtomicIntegerArray` 为例子来介绍。
 
-**`AtomicIntegerArray` 类常用方法**：
+**`AtomicIntegerArray` Class 常用 Method**：
 
 ```java
 public final int get(int i) //获取 index=i 位置元素的值
@@ -142,7 +142,7 @@ boolean compareAndSet(int i, int expect, int update) //如果输入的数值等�
 public final void lazySet(int i, int newValue)//最终 将index=i 位置的元素设置为newValue,使用 lazySet 设置之后可能导致其他线程在之后的一小段时间内还是可以读到旧的值。
 ```
 
-**`AtomicIntegerArray` 类使用示例** :
+**`AtomicIntegerArray` Class 使用示例** :
 
 ```java
 int[] nums = {1, 2, 3, 4, 5, 6};
@@ -196,17 +196,17 @@ Returned value: 3
 Index 0: 8 Index 1: 2 Index 2: 3 Index 3: 4 Index 4: 5 Index 5: 6
 ```
 
-## 引用类型原子类
+## Reference Type Atomic Class
 
-基本类型原子类只能更新一个变量，如果需要原子更新多个变量，需要使用 引用类型原子类。
+Primitive Type Atomic Class 只能更新一个 Variable，如果需要 Atomic Update 多个 Variable，需要使用 Reference Type Atomic Class。
 
-- `AtomicReference`：引用类型原子类
-- `AtomicStampedReference`：原子更新带有版本号的引用类型。该类将整数值与引用关联起来，可用于解决原子的更新数据和数据的版本号，可以解决使用 CAS 进行原子更新时可能出现的 ABA 问题。
-- `AtomicMarkableReference`：原子更新带有标记的引用类型。该类将 boolean 标记与引用关联起来，~~也可以解决使用 CAS 进行原子更新时可能出现的 ABA 问题。~~
+- `AtomicReference`：Reference Type Atomic Class
+- `AtomicStampedReference`：Atomic Update 带有 Version 的 Reference Type。该 Class 将整数值与 Reference 关联起来，可用于解决 Atomic 的更新数据和数据的 Version，可以解决使用 CAS 进行 Atomic Update 时可能出现的 ABA 问题。
+- `AtomicMarkableReference`：Atomic Update 带有标记的 Reference Type。该 Class 将 boolean 标记与 Reference 关联起来，~~也可以解决使用 CAS 进行 Atomic Update 时可能出现的 ABA 问题。~~
 
-上面三个类提供的方法几乎相同，所以我们这里以 `AtomicReference` 为例子来介绍。
+上面三个 Class 提供的 Method 几乎相同，所以我们这里以 `AtomicReference` 为例子来介绍。
 
-**`AtomicReference` 类使用示例** :
+**`AtomicReference` Class 使用示例** :
 
 ```java
 // Person 类
@@ -248,7 +248,7 @@ Second Update Success: true
 Final Person: Person{name='John', age=30}
 ```
 
-**`AtomicStampedReference` 类使用示例** :
+**`AtomicStampedReference` Class 使用示例** :
 
 ```java
 // 创建一个 AtomicStampedReference 对象，初始值为 "SnailClimb"，初始版本号为 1
@@ -293,7 +293,7 @@ Update with Wrong Stamp Success: false
 Final Reference: Daisy, Final Stamp: 2
 ```
 
-**`AtomicMarkableReference` 类使用示例** :
+**`AtomicMarkableReference` Class 使用示例** :
 
 ```java
 // 创建一个 AtomicMarkableReference 对象，初始值为 "SnailClimb"，初始标记为 false
@@ -338,19 +338,19 @@ Update with Wrong Mark Success: false
 Final Reference: Daisy, Final Mark: true
 ```
 
-## 对象的属性修改类型原子类
+## Object 的属性修改 Type Atomic Class
 
-如果需要原子更新某个类里的某个字段时，需要用到对象的属性修改类型原子类。
+如果需要 Atomic Update 某个 Class 里的某个 Field 时，需要用到 Object 的属性修改 Type Atomic Class。
 
-- `AtomicIntegerFieldUpdater`:原子更新整形字段的更新器
-- `AtomicLongFieldUpdater`：原子更新长整形字段的更新器
-- `AtomicReferenceFieldUpdater`：原子更新引用类型里的字段的更新器
+- `AtomicIntegerFieldUpdater`:Atomic Update 整形 Field 的更新器
+- `AtomicLongFieldUpdater`：Atomic Update 长整形 Field 的更新器
+- `AtomicReferenceFieldUpdater`：Atomic Update Reference Type 里的 Field 的更新器
 
-要想原子地更新对象的属性需要两步。第一步，因为对象的属性修改类型原子类都是抽象类，所以每次使用都必须使用静态方法 `newUpdater()` 创建一个更新器，并且需要设置想要更新的类和属性。第二步，目标字段必须使用 `volatile` 修饰，并与更新器的类型匹配：分别为 `int`、`long` 或引用类型；同时不能是 `static` 或 `final` 字段。
+要想 Atomic 地更新 Object 的属性需要两步。第一步，因为 Object 的属性修改 Type Atomic Class 都是 Abstract Class，所以每次使用都必须使用 Static Method `newUpdater()` 创建一个更新器，并且需要设置想要更新的 Class 和属性。第二步，目标 Field 必须使用 `volatile` 修饰，并与更新器的 Type 匹配：分别为 `int`、`long` 或 Reference Type；同时不能是 `static` 或 `final` Field。
 
-上面三个类提供的方法几乎相同，所以我们这里以 `AtomicIntegerFieldUpdater` 为例子来介绍。
+上面三个 Class 提供的 Method 几乎相同，所以我们这里以 `AtomicIntegerFieldUpdater` 为例子来介绍。
 
-**`AtomicIntegerFieldUpdater` 类使用示例** :
+**`AtomicIntegerFieldUpdater` Class 使用示例** :
 
 ```java
 // Person 类
@@ -399,6 +399,6 @@ Final Person: Name: SnailClimb, Age: 30
 
 ## 参考
 
-- 《Java 并发编程的艺术》
+- 《Java Concurrent Programming 的艺术》
 
 <!-- @include: @article-footer.snippet.md -->
